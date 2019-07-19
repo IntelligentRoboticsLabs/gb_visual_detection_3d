@@ -1,0 +1,12 @@
+<launch>
+
+  <param name="darknet_ros_topic" value="/darknet_ros/bounding_boxes" />
+  <param name="depth_image_topic" value="/camera/depth/image_raw" />
+  <!-- max distance between nearest pixel and any other pixel of image to be countered -->
+  <param name="dist_range_pixels" value="1000.0" />
+  <!-- minimum distance that camera is be able to detect -->
+  <param name="min_camera_dist" value="500.0" />
+
+  <node pkg="darknet_ros_3d" type="darknet3d" name="Darknet_3d" output="screen"></node>
+
+</launch>
