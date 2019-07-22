@@ -40,6 +40,8 @@ Now, you can run *darknet_ros_3d* typing ``roslaunch darknet_ros_3d darknet_ros_
 
 * **min_camera_dist:** minimum distance that camera is be able to detect.
 
-To conclude, the topic where darknet_ros_3d publicates his output is ``/darknet_ros_3d/bounding_boxes``.
+This node is **inactive**, by default, because it's a BICA Component. **To active it** ```rosrun bica launcher Darknet_3d ```
 
-**NOTE:** *Node that runs launch file is a BICA component*.
+## Output
+
+The topic where darknet_ros_3d publicates his output is ``/darknet_ros_3d/bounding_boxes``.
