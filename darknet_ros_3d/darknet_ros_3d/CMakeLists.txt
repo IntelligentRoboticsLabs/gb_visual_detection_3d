@@ -17,6 +17,9 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   bica
   bica_msgs
+  tf
+  pcl_ros
+  pcl_conversions
 )
 
 find_package(OpenCV REQUIRED)
@@ -111,10 +114,10 @@ find_package(OpenCV REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES darknet_ros_3d
-#  CATKIN_DEPENDS darknet_ros_msgs robocuphomeeducation_msgs roscpp rospy std_msgs
-#  DEPENDS system_lib
+  #INCLUDE_DIRS include
+  LIBRARIES darknet_ros_3d
+  CATKIN_DEPENDS ${PACKAGE_DEPENDENCIES}
+  DEPENDS PCL
 )
 
 ###########
