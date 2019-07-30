@@ -50,6 +50,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    BoundingBoxes3d.msg
    BoundingBox3d.msg
+   depth_type.msg
  )
 
 ## Generate services in the 'srv' folder
