@@ -35,6 +35,7 @@ Darknet3D::initParams()
   pointcloud_topic_ = "/camera/depth_registered/points";
   working_frame_ = "/camera_link";
   mininum_detection_thereshold_ = 0.5f;
+  execution_frequency_ = 2.0;
 
   nh_.param("darknet_ros_topic", input_bbx_topic_, input_bbx_topic_);
   nh_.param("output_bbx3d_topic", output_bbx3d_topic_, output_bbx3d_topic_);
@@ -42,6 +43,7 @@ Darknet3D::initParams()
   nh_.param("working_frame", working_frame_, working_frame_);
   nh_.param("mininum_detection_thereshold", mininum_detection_thereshold_, mininum_detection_thereshold_);
   nh_.param("interested_classes", interested_classes_, interested_classes_);
+  nh_.param("execution_frequency", execution_frequency_, execution_frequency_);
 }
 
 void

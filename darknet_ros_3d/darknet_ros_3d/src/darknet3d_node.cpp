@@ -7,7 +7,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "darknet_3d");
   darknet_ros_3d::Darknet3D darknet3d;
 
-  ros::Rate loop_rate(2);
+  ros::Rate loop_rate(darknet3d.execution_frequency_);
 
   while (ros::ok())
   {
