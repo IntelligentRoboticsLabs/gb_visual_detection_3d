@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="darknet_ros_3d" type="darknet3d_node" name="darknet_3d" output="screen" launch-prefix="gdb -ex run --args">
+    <rosparam command="load" file="$(find darknet_ros_3d)/config/darknet_3d.yaml" />
+  </node>
+</launch>

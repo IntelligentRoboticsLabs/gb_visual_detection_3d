@@ -1,0 +1,4 @@
+interested_classes: ["person", "bird"]
+mininum_detection_thereshold: 0.3
+darknet_ros_topic: /darknet_ros/bounding_boxes
+point_cloud_topic: /camera/depth_registered/points

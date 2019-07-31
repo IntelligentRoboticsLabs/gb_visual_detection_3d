@@ -1,7 +1,8 @@
 string Class
 float64 probability
-int64 xmin
-int64 ymin
-int64 xmax
-int64 ymax
-depth_type depth
+float64 xmin
+float64 ymin
+float64 xmax
+float64 ymax
+float64 zmin
+float64 zmax
