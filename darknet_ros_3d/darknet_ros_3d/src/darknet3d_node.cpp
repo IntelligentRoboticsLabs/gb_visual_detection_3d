@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
   ros::Rate loop_rate(2);
 
-  while(ros::ok())
+  while (ros::ok())
   {
     darknet3d.update();
 

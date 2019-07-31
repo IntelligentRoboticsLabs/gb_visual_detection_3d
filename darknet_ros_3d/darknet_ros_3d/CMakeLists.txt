@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   pcl_ros
   pcl_conversions
+  roslint
 )
 
 find_package(OpenCV REQUIRED)
@@ -43,3 +44,11 @@ add_executable(darknet3d_bica_node
   src/darknet3d_bica_node.cpp)
 
 target_link_libraries(darknet3d_bica_node ${catkin_LIBRARIES})
+
+set(ROSLINT_CPP_OPTS "--filter=-legal/copyright")
+
+roslint_cpp(
+  src/darknet_ros_3d/Darknet3D.cpp include/darknet_ros_3d/Darknet3D.h
+  src/darknet3d_node.cpp
+  src/darknet3d_bica_node.cpp
+)

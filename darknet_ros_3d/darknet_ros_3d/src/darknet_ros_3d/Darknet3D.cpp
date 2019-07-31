@@ -6,7 +6,9 @@
 
 #include <pcl_ros/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
+
 #include <limits>
+#include <algorithm>
 
 namespace darknet_ros_3d
 {
@@ -67,10 +69,13 @@ Darknet3D::update()
 
   sensor_msgs::PointCloud2 local_pointcloud;
 
-  try {
+  try
+  {
     pcl_ros::transformPointCloud(working_frame_, point_cloud_, local_pointcloud, tfListener_);
-  } catch(tf::TransformException& ex){
-    ROS_ERROR_STREAM( "Transform error of sensor data: " << ex.what() << ", quitting callback");
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_ERROR_STREAM("Transform error of sensor data: " << ex.what() << ", quitting callback");
     return;
   }
 

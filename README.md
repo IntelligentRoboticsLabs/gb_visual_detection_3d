@@ -1,5 +1,9 @@
 # Darknet Ros 3d. Usage Guide
 
+
+[![Build Status](https://travis-ci.com/IntelligentRoboticsLabs/gb_visual_detection_3d.svg?branch=master)](https://travis-ci.com/IntelligentRoboticsLabs/gb_visual_detection_3d)
+
+
 ## About Darknet Ros 3d
 Darknet Ros 3d allows you to know all bounding boxes that Darknet Ros also provide you but adding the stimated distance to each bounding box. Later, how it works is explained.
 

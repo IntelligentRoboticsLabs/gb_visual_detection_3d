@@ -8,7 +8,7 @@ class Darknet3DBica: public darknet_ros_3d::Darknet3D, bica::Component
 public:
   void update()
   {
-    if(isActive())
+    if (isActive())
       darknet_ros_3d::Darknet3D::update();
   }
 };
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
   ros::Rate loop_rate(2);
 
-  while(ros::ok())
+  while (ros::ok())
   {
     darknet3d.update();
 
