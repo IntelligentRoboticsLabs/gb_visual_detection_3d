@@ -20,6 +20,8 @@ class Darknet3D
 public:
   Darknet3D();
 
+  float execution_frequency_;
+
   virtual void update();
 
 private:
