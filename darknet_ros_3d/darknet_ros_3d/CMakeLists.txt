@@ -13,7 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   darknet_ros_msgs
   darknet_ros_3d_msgs
   sensor_msgs
-  bica
   tf
   pcl_ros
   pcl_conversions
@@ -30,25 +29,22 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  )
+)
 
+add_library(${PROJECT_NAME} src/darknet_ros_3d/Darknet3D.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-add_executable(darknet3d_node
-  src/darknet_ros_3d/Darknet3D.cpp
-  src/darknet3d_node.cpp)
-
-target_link_libraries(darknet3d_node ${catkin_LIBRARIES})
-
-add_executable(darknet3d_bica_node
-  src/darknet_ros_3d/Darknet3D.cpp
-  src/darknet3d_bica_node.cpp)
-
-target_link_libraries(darknet3d_bica_node ${catkin_LIBRARIES})
-
-set(ROSLINT_CPP_OPTS "--filter=-legal/copyright")
+add_executable(darknet3d_node src/darknet3d_node.cpp)
+target_link_libraries(darknet3d_node ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 roslint_cpp(
   src/darknet_ros_3d/Darknet3D.cpp include/darknet_ros_3d/Darknet3D.h
   src/darknet3d_node.cpp
-  src/darknet3d_bica_node.cpp
 )
+
+install(TARGETS ${PROJECT_NAME}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

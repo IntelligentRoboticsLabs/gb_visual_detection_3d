@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="darknet_ros_3d" type="darknet3d_bica_node" name="darknet_3d" output="screen">
-    <rosparam command="load" file="$(find darknet_ros_3d)/config/darknet_3d.yaml" />
-  </node>
-</launch>
