@@ -37,6 +37,7 @@
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>darknet_ros_msgs</exec_depend>
+  <exec_depend>darknet_ros</exec_depend>
   <exec_depend>darknet_ros_3d_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf</exec_depend>

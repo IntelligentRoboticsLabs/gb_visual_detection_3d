@@ -95,33 +95,13 @@ Darknet3D::darknetCb(const darknet_ros_msgs::BoundingBoxes::ConstPtr& msg)
 }
 
 void
-Darknet3D::update()
+Darknet3D::calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
+    const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
+    darknet_ros_3d_msgs::BoundingBoxes3d* boxes)
 {
-  if ((ros::Time::now() - last_detection_ts_).toSec() > 2.0)
-    return;
 
-  if ((darknet3d_pub_.getNumSubscribers() == 0) &&
-      (markers_pub_.getNumSubscribers() == 0))
-    return;
-
-  sensor_msgs::PointCloud2 local_pointcloud;
-
-  try
-  {
-    pcl_ros::transformPointCloud(working_frame_, point_cloud_, local_pointcloud, tfListener_);
-  }
-  catch(tf::TransformException& ex)
-  {
-    ROS_ERROR_STREAM("Transform error of sensor data: " << ex.what() << ", quitting callback");
-    return;
-  }
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::fromROSMsg(local_pointcloud, *pcrgb);
-
-  darknet_ros_3d_msgs::BoundingBoxes3d msg;
-  msg.header.stamp = point_cloud_.header.stamp;
-  msg.header.frame_id = working_frame_;
+  boxes->header.stamp = cloud_pc2.header.stamp;
+  boxes->header.frame_id = working_frame_;
 
   for (auto bbx : original_bboxes_)
   {
@@ -136,8 +116,8 @@ Darknet3D::update()
     center_x = (bbx.xmax + bbx.xmin) / 2;
     center_y = (bbx.ymax + bbx.ymin) / 2;
 
-    int pcl_index = (center_y* local_pointcloud.width) + center_x;
-    pcl::PointXYZRGB center_point =  pcrgb->at(pcl_index);
+    int pcl_index = (center_y* cloud_pc2.width) + center_x;
+    pcl::PointXYZRGB center_point =  cloud_pcl->at(pcl_index);
 
     if (std::isnan(center_point.x))
       continue;
@@ -150,8 +130,8 @@ Darknet3D::update()
     for (int i = bbx.xmin; i < bbx.xmax; i++)
       for (int j = bbx.ymin; j < bbx.ymax; j++)
       {
-        pcl_index = (j* local_pointcloud.width) + i;
-        pcl::PointXYZRGB point =  pcrgb->at(pcl_index);
+        pcl_index = (j* cloud_pc2.width) + i;
+        pcl::PointXYZRGB point =  cloud_pcl->at(pcl_index);
 
         if (std::isnan(point.x))
           continue;
@@ -177,8 +157,38 @@ Darknet3D::update()
     bbx_msg.zmin = minz;
     bbx_msg.zmax = maxz;
 
-    msg.bounding_boxes.push_back(bbx_msg);
+    boxes->bounding_boxes.push_back(bbx_msg);
   }
+}
+
+void
+Darknet3D::update()
+{
+  if ((ros::Time::now() - last_detection_ts_).toSec() > 2.0)
+    return;
+
+  if ((darknet3d_pub_.getNumSubscribers() == 0) &&
+      (markers_pub_.getNumSubscribers() == 0))
+    return;
+
+  sensor_msgs::PointCloud2 local_pointcloud;
+
+  try
+  {
+    pcl_ros::transformPointCloud(working_frame_, point_cloud_, local_pointcloud, tfListener_);
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_ERROR_STREAM("Transform error of sensor data: " << ex.what() << ", quitting callback");
+    return;
+  }
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::fromROSMsg(local_pointcloud, *pcrgb);
+
+  darknet_ros_3d_msgs::BoundingBoxes3d msg;
+
+  calculate_boxes(local_pointcloud, pcrgb, &msg);
 
   darknet3d_pub_.publish(msg);
 

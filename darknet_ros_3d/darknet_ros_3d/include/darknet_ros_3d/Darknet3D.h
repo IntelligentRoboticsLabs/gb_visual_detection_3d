@@ -44,6 +44,7 @@
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <sensor_msgs/PointCloud2.h>
 
+#include <pcl_ros/point_cloud.h>
 #include <tf/transform_listener.h>
 
 #include <vector>
@@ -64,6 +65,10 @@ private:
   void pointCloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg);
   void darknetCb(const darknet_ros_msgs::BoundingBoxes::ConstPtr& msg);
   void publish_markers(const darknet_ros_3d_msgs::BoundingBoxes3d& boxes);
+
+  void calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
+      const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
+      darknet_ros_3d_msgs::BoundingBoxes3d* boxes);
 
   ros::NodeHandle nh_;
   ros::Subscriber yolo_sub_, pointCloud_sub_;
