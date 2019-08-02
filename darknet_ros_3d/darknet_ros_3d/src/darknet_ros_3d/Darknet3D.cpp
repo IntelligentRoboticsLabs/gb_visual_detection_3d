@@ -99,7 +99,6 @@ Darknet3D::calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
     const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
     darknet_ros_3d_msgs::BoundingBoxes3d* boxes)
 {
-
   boxes->header.stamp = cloud_pc2.header.stamp;
   boxes->header.frame_id = working_frame_;
 
