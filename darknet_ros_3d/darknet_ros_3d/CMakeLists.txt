@@ -19,8 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   roslint
 )
 
-find_package(OpenCV REQUIRED)
-
 catkin_package(
   CATKIN_DEPENDS ${PACKAGE_DEPENDENCIES}
   DEPENDS PCL
