@@ -67,15 +67,13 @@ Now, you can run *darknet_ros_3d* typing ``roslaunch darknet_ros_3d darknet_ros_
 
 * **working_frame:** frame that all measurements are based on. By default, *camera_link*.
 
-* **execution_frequency:** Frequency (in Hz) that nodes run when they are executed.
-
 ## Nodes
 
 ### darknet3d_node
 
 *darknet3d_node* provide bounding boxes. This bounding boxes are combinated with point cloud informatiion to calculate (xmin, ymin, zmin) and (xmax, ymax, zmax) 3D coordinates.
 
-Then, *darknet_ros_3d* publicates his own bounding boxes array with the following information:
+Then, *darknet_ros_3d* publicates his own bounding boxes array of *BoundingBoxes3d* type, which is an array of *BoundingBox3d* that contains the following information:
 ```
 string Class
 float64 probability
