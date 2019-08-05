@@ -26,6 +26,7 @@ Using a RGBD camera like Asus Xtion and neuronal network *darknet ros*, objects 
 In addition, there is a visual debugger tool based on visual markers that you can see with rviz
 
 ![Image](https://github.com/IntelligentRoboticsLabs/gb_visual_detection_3d/raw/master/docs/visual_markers.png)
+![Image](https://github.com/IntelligentRoboticsLabs/gb_visual_detection_3d/raw/master/docs/visual_markers2.png)
 
 ### Previous Steps
 
