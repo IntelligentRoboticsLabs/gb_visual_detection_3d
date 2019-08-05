@@ -35,7 +35,6 @@ The first we have to know is that *darknet_ros_3d* package have dependencies as 
 * darknet_ros_msgs
 * darknet_ros_3d_msgs
 * sensor_msgs
-* bica
 * tf
 * pcl_ros
 * pcl_conversions
