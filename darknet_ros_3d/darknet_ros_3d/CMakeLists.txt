@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   darknet_ros_3d_msgs
   sensor_msgs
   tf2_ros
+  tf2_geometry_msgs
   pcl_ros
   pcl_conversions
   roslint
