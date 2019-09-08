@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   darknet_ros_msgs
   darknet_ros_3d_msgs
   sensor_msgs
-  tf
+  tf2_ros
   pcl_ros
   pcl_conversions
   roslint
@@ -22,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   CATKIN_DEPENDS ${PACKAGE_DEPENDENCIES}
   DEPENDS PCL
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}
 )
 
 include_directories(
@@ -29,7 +31,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/darknet_ros_3d/Darknet3D.cpp)
+add_library(${PROJECT_NAME}
+  src/darknet_ros_3d/Darknet3D.cpp
+  src/darknet_ros_3d/Darknet3DListener.cpp
+)
+
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(darknet3d_node src/darknet3d_node.cpp)
@@ -37,6 +43,7 @@ target_link_libraries(darknet3d_node ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 roslint_cpp(
   src/darknet_ros_3d/Darknet3D.cpp include/darknet_ros_3d/Darknet3D.h
+  src/darknet_ros_3d/Darknet3DListener.cpp include/darknet_ros_3d/Darknet3DListener.h
   src/darknet3d_node.cpp
 )
 
