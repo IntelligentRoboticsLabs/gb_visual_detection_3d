@@ -60,7 +60,7 @@ Darknet3DListener::Darknet3DListener(const std::list<std::string>& classes, cons
 void
 Darknet3DListener::reset()
 {
-  classes_.clear();
+  objects_.clear();
 }
 
 bool
@@ -153,6 +153,7 @@ Darknet3DListener::objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::C
 
     if (!is_already_detected(point))
       objects_.push_back(point);
+
   }
 }
 
@@ -160,6 +161,7 @@ void
 Darknet3DListener::print()
 {
   int counter = 0;
+  ROS_INFO("============> Number of ojects %zu", objects_.size());
   for (const auto& test_obj : objects_)
   {
     ROS_INFO("============> %d [%s] (%lf %lf, %lf) [%lf, %lf, %lf]", counter++, test_obj.class_id.c_str(),
