@@ -59,11 +59,27 @@ struct DetectedObject
   double size_z;
 };
 
+struct ObjectConfiguration
+{
+  double min_probability;
+  double min_x;
+  double max_x;
+  double min_y;
+  double max_y;
+  double min_z;
+  double max_z;
+  double min_size_x;
+  double min_size_y;
+  double min_size_z;
+  double max_size_x;
+  double max_size_y;
+  double max_size_z;
+};
 
 class Darknet3DListener
 {
 public:
-  Darknet3DListener(const std::list<std::string>& classes, const std::string& working_frame);
+  Darknet3DListener(const std::string& working_frame);
 
   void reset();
   void objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::ConstPtr& msg);
@@ -73,22 +89,23 @@ public:
   void set_working_frame(const std::string& working_frame) {working_frame_ = working_frame;}
   std::string get_working_frame() {return working_frame_;}
 
-  const std::list<std::string>& get_classes() {return classes_;}
-  void set_classes(const std::list<std::string>& classes);
-
   void set_active() {active_ = true;}
   void set_inactive() {active_ = false;}
 
-  void filter_objects(const std::string& class_id, float min_probability,
-    double min_x, double max_x, double min_y, double max_y, double min_z, double max_z,
-    double min_sizex, double max_sizex, double min_sizey, double max_sizey,
-    double min_sizez, double max_sizez);
+  void add_class(const std::string& class_id, const ObjectConfiguration& conf);
 
   void print();
 
 private:
   bool is_already_detected(const DetectedObject& object);
   bool is_interested_class(const std::string& class_id);
+  bool is_valid_object(const DetectedObject& object);
+
+  void add_object(const DetectedObject& object);
+  bool same_object(const DetectedObject& obj1, const DetectedObject& obj2);
+  bool other_object(const DetectedObject& obj1, const DetectedObject& obj2);
+
+  void merge_objects(DetectedObject& existing_object, const DetectedObject& new_object);
 
   ros::NodeHandle nh_;
   ros::Subscriber object_sub_;
@@ -96,8 +113,10 @@ private:
   tf2_ros::TransformListener tf_listener_;
 
   std::vector<DetectedObject> objects_;
-  std::list<std::string> classes_;
   std::string working_frame_;
+
+  std::map<std::string, ObjectConfiguration> classes_conf_;
+
 
   bool active_;
 };

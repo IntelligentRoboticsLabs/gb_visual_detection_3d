@@ -47,10 +47,9 @@
 namespace darknet_ros_3d
 {
 
-Darknet3DListener::Darknet3DListener(const std::list<std::string>& classes, const std::string& working_frame):
+Darknet3DListener::Darknet3DListener( const std::string& working_frame):
   nh_(),
   tf_listener_(tfBuffer_),
-  classes_(classes),
   working_frame_(working_frame),
   active_(false)
 {
@@ -66,7 +65,7 @@ Darknet3DListener::reset()
 bool
 Darknet3DListener::is_interested_class(const std::string& class_id)
 {
-  return std::find(classes_.begin(), classes_.end(), class_id) != classes_.end();
+  return classes_conf_.find(class_id) != classes_conf_.end();
 }
 
 bool
@@ -86,25 +85,40 @@ Darknet3DListener::is_already_detected(const DetectedObject& object)
 }
 
 void
-Darknet3DListener::filter_objects(const std::string& class_id, float min_probability,
-  double min_x, double max_x, double min_y, double max_y, double min_z, double max_z,
-  double min_sizex, double max_sizex, double min_sizey, double max_sizey, double min_sizez, double max_sizez)
+Darknet3DListener::add_class(const std::string& class_id, const ObjectConfiguration& conf)
 {
-  auto it = objects_.begin();
-  while (it != objects_.end())
-  {
-    if ((it->class_id == class_id) &&
-        (it->probability < min_probability ||
-         it->central_point.x() < min_x || it->central_point.x() > max_x ||
-         it->central_point.y() < min_y || it->central_point.y() > max_y ||
-         it->central_point.z() < min_z || it->central_point.z() > max_z ||
-         it->size_x < min_sizex || it->size_x > max_sizex ||
-         it->size_y < min_sizey || it->size_y > max_sizey ||
-         it->size_z < min_sizez || it->size_z > max_sizez))
-      it = objects_.erase(it);
-    else
-      ++it;
-  }
+  classes_conf_[class_id] = conf;
+}
+
+bool
+Darknet3DListener::is_valid_object(const DetectedObject& object)
+{
+  const ObjectConfiguration& conf = classes_conf_[object.class_id];
+
+  /*ROS_INFO("Conf: [%s]", object.class_id.c_str());
+  ROS_INFO("\tmin_probability = %lf", conf.min_probability);
+  ROS_INFO("\tX = [%lf, %lf]", conf.min_x, conf.max_x);
+  ROS_INFO("\tY = [%lf, %lf]", conf.min_y, conf.max_y);
+  ROS_INFO("\tZ = [%lf, %lf]", conf.min_z, conf.max_z);
+  ROS_INFO("\tSize X = [%lf, %lf]", conf.min_size_x, conf.max_size_x);
+  ROS_INFO("\tSize Y = [%lf, %lf]", conf.min_size_y, conf.max_size_y);
+  ROS_INFO("\tSize Z = [%lf, %lf]", conf.min_size_z, conf.max_size_z);
+*/
+  /*if (object.probability <= conf.min_probability) ROS_INFO("Excluded by Probability");
+  if (object.central_point.x() <= conf.min_x || object.central_point.x() >= conf.max_x) ROS_INFO("Excluded by Pos X");
+  if (object.central_point.y() <= conf.min_y || object.central_point.y() >= conf.max_y) ROS_INFO("Excluded by Pos Y");
+  if (object.central_point.z() <= conf.min_z || object.central_point.z() >= conf.max_z) ROS_INFO("Excluded by Pos Z");
+  if (object.size_x <= conf.min_size_x || object.size_x >= conf.max_size_x) ROS_INFO("Excluded by Size X");
+  if (object.size_y <= conf.min_size_y || object.size_y >= conf.max_size_y) ROS_INFO("Excluded by Size Y");
+  if (object.size_z <= conf.min_size_z || object.size_z >= conf.max_size_z) ROS_INFO("Excluded by Size Z");*/
+
+  return object.probability > conf.min_probability &&
+   object.central_point.x() > conf.min_x && object.central_point.x() < conf.max_x &&
+   object.central_point.y() > conf.min_y && object.central_point.y() < conf.max_y &&
+   object.central_point.z() > conf.min_z && object.central_point.z() < conf.max_z &&
+   object.size_x > conf.min_size_x && object.size_x < conf.max_size_x &&
+   object.size_y > conf.min_size_y && object.size_y < conf.max_size_y &&
+   object.size_z > conf.min_size_z && object.size_z < conf.max_size_z;
 }
 
 void
@@ -113,8 +127,11 @@ Darknet3DListener::objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::C
   if (!active_)
     return;
 
+  int counter = 0;
   for (const auto& bb : msg->bounding_boxes)
   {
+    // ROS_INFO("Object received [%s]", bb.Class.c_str());
+
     if (!is_interested_class(bb.Class))
       continue;
 
@@ -123,8 +140,8 @@ Darknet3DListener::objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::C
 
     std::string error;
     if (tfBuffer_.canTransform(msg->header.frame_id, working_frame_,
-      ros::Time(0), ros::Duration(0.1), &error))
-      any2wf_msg = tfBuffer_.lookupTransform(msg->header.frame_id, working_frame_, ros::Time(0));
+       msg->header.stamp, ros::Duration(0.1), &error))
+      any2wf_msg = tfBuffer_.lookupTransform(msg->header.frame_id, working_frame_, msg->header.stamp);
     else
     {
       ROS_ERROR("Can't transform %s", error.c_str());
@@ -136,25 +153,131 @@ Darknet3DListener::objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::C
 
     any2wf = aux;
 
-    DetectedObject point;
+    DetectedObject object;
 
-    point.central_point.setX((bb.xmax + bb.xmin)/2.0);
-    point.central_point.setY((bb.ymax + bb.ymin)/2.0);
-    point.central_point.setZ((bb.zmax + bb.zmin)/2.0);
+    object.central_point.setX((bb.xmax + bb.xmin)/2.0);
+    object.central_point.setY((bb.ymax + bb.ymin)/2.0);
+    object.central_point.setZ((bb.zmax + bb.zmin)/2.0);
 
-    point.central_point = any2wf.inverse() * point.central_point;
+    object.central_point = any2wf.inverse() * object.central_point;
 
-    point.size_x = bb.xmax - bb.xmin;
-    point.size_y = bb.ymax - bb.ymin;
-    point.size_z = bb.zmax - bb.zmin;
+    object.size_x = bb.xmax - bb.xmin;
+    object.size_y = bb.ymax - bb.ymin;
+    object.size_z = bb.zmax - bb.zmin;
+    object.class_id = bb.Class;
+    object.probability = bb.probability;
 
-    point.class_id = bb.Class;
-    point.probability = bb.probability;
+    /*ROS_INFO("-----------> %d prob=%f  [%s] coords=(%lf %lf, %lf) sizes=[%lf, %lf, %lf]", counter++,
+      object.probability, object.class_id.c_str(),
+      object.central_point.x(), object.central_point.y(), object.central_point.z(),
+      object.size_x, object.size_y, object.size_z);*/
 
-    if (!is_already_detected(point))
-      objects_.push_back(point);
-
+    if (is_valid_object(object))
+    {
+      //ROS_INFO("Is valid");
+      add_object(object);
+    }
+    else
+    {
+      // ROS_INFO("Is not valid");
+    }
   }
+}
+
+void
+Darknet3DListener::add_object(const DetectedObject& object)
+{
+  bool new_object = true;
+  for (auto& existing_object : objects_)
+  {
+    if (same_object(existing_object, object))
+    {
+      // ROS_INFO("Merging with one existing");
+      merge_objects(existing_object, object);
+      new_object = false;
+    }
+    else if (!other_object(existing_object, object))
+    {
+      // ROS_INFO("Not merging, but it is not other object");
+      new_object = false;
+    }
+  }
+
+  if (new_object)
+  {
+    // ROS_INFO("Adding a new object");
+    objects_.push_back(object);
+  }
+}
+
+bool
+Darknet3DListener::other_object(const DetectedObject& obj1, const DetectedObject& obj2)
+{
+  /*if (obj1.class_id == obj2.class_id) ROS_INFO("\tIt is the same class");
+  if (fabs(obj1.central_point.x() - obj2.central_point.x()) < (obj1.size_x + obj2.size_x))
+    ROS_INFO("\tX (dist %lf < %lf)", fabs(obj1.central_point.x() - obj2.central_point.x()),  (obj1.size_x / 1.8 + obj2.size_x/ 1.8));
+  if (fabs(obj1.central_point.y() - obj2.central_point.y()) < (obj1.size_y + obj2.size_y))
+    ROS_INFO("\tY (dist %lf < %lf)", fabs(obj1.central_point.y() - obj2.central_point.y()), (obj1.size_y / 1.8 + obj2.size_y / 1.8));
+  if (fabs(obj1.central_point.z() - obj2.central_point.z()) < (obj1.size_z + obj2.size_z))
+    ROS_INFO("\tZ (dist %lf < %lf)", fabs(obj1.central_point.z() - obj2.central_point.z()), (obj1.size_z / 1.8 + obj2.size_z / 1.8));
+    */
+  return  obj1.class_id != obj2.class_id ||
+          (fabs(obj1.central_point.x() - obj2.central_point.x()) > (obj1.size_x / 1.8 + obj2.size_x / 1.8)) ||
+          (fabs(obj1.central_point.y() - obj2.central_point.y()) > (obj1.size_y / 1.8 + obj2.size_y / 1.8)) ||
+          (fabs(obj1.central_point.z() - obj2.central_point.z()) > (obj1.size_z / 1.8 + obj2.size_z / 1.8));
+}
+
+bool
+Darknet3DListener::same_object(const DetectedObject& obj1, const DetectedObject& obj2)
+{
+  return obj1.class_id == obj2.class_id &&
+         (fabs(obj1.central_point.x() - obj2.central_point.x()) < (obj1.size_x / 2.0 + obj2.size_x / 2.0)) &&
+         (fabs(obj1.central_point.y() - obj2.central_point.y()) < (obj1.size_y / 2.0 + obj2.size_y / 2.0)) &&
+         (fabs(obj1.central_point.z() - obj2.central_point.z()) < (obj1.size_z / 2.0 + obj2.size_z / 2.0));
+}
+
+void
+Darknet3DListener::merge_objects(DetectedObject& existing_object, const DetectedObject& new_object)
+{
+  double e_min_x = existing_object.central_point.x() - existing_object.size_x / 2.0;
+  double e_min_y = existing_object.central_point.y() - existing_object.size_y / 2.0;
+  double e_min_z = existing_object.central_point.z() - existing_object.size_z / 2.0;
+  double e_max_x = existing_object.central_point.x() + existing_object.size_x / 2.0;
+  double e_max_y = existing_object.central_point.y() + existing_object.size_y / 2.0;
+  double e_max_z = existing_object.central_point.z() + existing_object.size_z / 2.0;
+
+  double n_min_x = new_object.central_point.x() - new_object.size_x / 2.0;
+  double n_min_y = new_object.central_point.y() - new_object.size_y / 2.0;
+  double n_min_z = new_object.central_point.z() - new_object.size_z / 2.0;
+  double n_max_x = new_object.central_point.x() + new_object.size_x / 2.0;
+  double n_max_y = new_object.central_point.y() + new_object.size_y / 2.0;
+  double n_max_z = new_object.central_point.z() + new_object.size_z / 2.0;
+
+  double min_x = std::min(e_min_x, n_min_x);
+  double min_y = std::min(e_min_y, n_min_y);
+  double min_z = std::min(e_min_z, n_min_z);
+  double max_x = std::max(e_max_x, n_max_x);
+  double max_y = std::max(e_max_y, n_max_y);
+  double max_z = std::max(e_max_z, n_max_z);
+
+  const ObjectConfiguration& conf = classes_conf_[existing_object.class_id];
+
+  double x = (max_x + min_x) / 2.0;
+  double y = (max_y + min_y) / 2.0;
+  double z = (max_z + min_z) / 2.0;
+  x = std::max(std::min(x, conf.max_x), conf.min_x);
+  y = std::max(std::min(y, conf.max_y), conf.min_y);
+  z = std::max(std::min(z, conf.max_z), conf.min_z);
+
+  existing_object.central_point.setX(x);
+  existing_object.central_point.setY(y);
+  existing_object.central_point.setZ(z);
+
+  existing_object.size_x = std::max(std::min(max_x - min_x, conf.max_size_x), conf.min_size_x);
+  existing_object.size_y = std::max(std::min(max_y - min_y, conf.max_size_y), conf.min_size_y);
+  existing_object.size_z = std::max(std::min(max_z - min_z, conf.max_size_z), conf.min_size_z);
+
+  existing_object.probability = (existing_object.probability + new_object.probability) / 2.0;
 }
 
 void
@@ -164,7 +287,8 @@ Darknet3DListener::print()
   ROS_INFO("============> Number of ojects %zu", objects_.size());
   for (const auto& test_obj : objects_)
   {
-    ROS_INFO("============> %d [%s] (%lf %lf, %lf) [%lf, %lf, %lf]", counter++, test_obj.class_id.c_str(),
+    ROS_INFO("============> %d prob=%f  [%s] coords=(%lf %lf, %lf) sizes=[%lf, %lf, %lf]", counter++,
+      test_obj.probability, test_obj.class_id.c_str(),
       test_obj.central_point.x(), test_obj.central_point.y(), test_obj.central_point.z(),
       test_obj.size_x, test_obj.size_y, test_obj.size_z);
   }
