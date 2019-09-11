@@ -219,7 +219,8 @@ Darknet3DListener::timer_callback(const ros::TimerEvent& ev)
   auto it = objects_.begin();
   while (it != objects_.end())
   {
-    if (it->history.empty())
+    const ObjectConfiguration& conf = classes_conf_[it->class_id];
+    if (conf.dynamic && it->history.empty())
       it = objects_.erase(it);
     else
       ++it;
