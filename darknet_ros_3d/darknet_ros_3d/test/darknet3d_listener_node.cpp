@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   cup_conf.dynamic = true;
   cup_conf.max_seconds = ros::Duration(2.0);
 
-  listener.add_class("cup", cup_conf);
+  listener.add_class("person", person_conf);
   listener.set_active();
 
   ros::Rate loop_rate(1);

@@ -114,6 +114,8 @@ private:
   void check_objects_history();
   void update_speed(DetectedObject& object);
 
+  void timer_callback(const ros::TimerEvent& ev);
+
   ros::NodeHandle nh_;
   ros::Subscriber object_sub_;
   tf2_ros::Buffer tfBuffer_;
@@ -124,6 +126,7 @@ private:
 
   std::map<std::string, ObjectConfiguration> classes_conf_;
 
+  ros::Timer timer_;
 
   bool active_;
 };
