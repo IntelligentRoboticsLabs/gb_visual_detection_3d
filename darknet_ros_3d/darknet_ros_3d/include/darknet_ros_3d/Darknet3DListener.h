@@ -57,6 +57,8 @@ struct DetectedObject
   double size_x;
   double size_y;
   double size_z;
+  tf2::Vector3 speed;
+  std::list<tf2::Stamped<tf2::Vector3>> history;
 };
 
 struct ObjectConfiguration
@@ -74,6 +76,8 @@ struct ObjectConfiguration
   double max_size_x;
   double max_size_y;
   double max_size_z;
+  bool dynamic;
+  ros::Duration max_seconds;
 };
 
 class Darknet3DListener
@@ -106,6 +110,9 @@ private:
   bool other_object(const DetectedObject& obj1, const DetectedObject& obj2);
 
   void merge_objects(DetectedObject& existing_object, const DetectedObject& new_object);
+
+  void check_objects_history();
+  void update_speed(DetectedObject& object);
 
   ros::NodeHandle nh_;
   ros::Subscriber object_sub_;

@@ -182,6 +182,27 @@ Darknet3DListener::objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::C
       // ROS_INFO("Is not valid");
     }
   }
+
+  check_objects_history();
+}
+
+void
+Darknet3DListener::check_objects_history()
+{
+  for (auto& object : objects_)
+  {
+    const ObjectConfiguration& conf = classes_conf_[object.class_id];
+    if (conf.dynamic)
+    {
+      while (!object.history.empty() &&
+             (ros::Time::now() - object.history.front().stamp_) > conf.max_seconds)
+      {
+        //ROS_INFO("Removing because (%lf > %lf)", (ros::Time::now() - object.history.front().stamp_).toSec(),
+        //  conf.max_seconds.toSec());
+        object.history.pop_front();
+      }
+    }
+  }
 }
 
 void
@@ -269,6 +290,19 @@ Darknet3DListener::merge_objects(DetectedObject& existing_object, const Detected
   y = std::max(std::min(y, conf.max_y), conf.min_y);
   z = std::max(std::min(z, conf.max_z), conf.min_z);
 
+  if (conf.dynamic)
+  {
+    tf2::Stamped<tf2::Vector3> point;
+    point.stamp_ = ros::Time::now();
+    point.frame_id_ = working_frame_;
+    point.setX(x);
+    point.setY(y);
+    point.setZ(z);
+    existing_object.history.push_back(point);
+
+    update_speed(existing_object);
+  }
+
   existing_object.central_point.setX(x);
   existing_object.central_point.setY(y);
   existing_object.central_point.setZ(z);
@@ -281,16 +315,46 @@ Darknet3DListener::merge_objects(DetectedObject& existing_object, const Detected
 }
 
 void
+Darknet3DListener::update_speed(DetectedObject& object)
+{
+  if (object.history.size() > 2)
+  {
+    double diff_time = (object.history.front().stamp_ - object.history.back().stamp_).toSec();
+
+    object.speed.setX((object.history.back().x() - object.history.front().x()) / diff_time);
+    object.speed.setY((object.history.back().y() - object.history.front().y()) / diff_time);
+    object.speed.setZ((object.history.back().z() - object.history.front().z()) / diff_time);
+  }
+  else
+  {
+    object.speed.setX(0.0);
+    object.speed.setY(0.0);
+    object.speed.setZ(0.0);
+  }
+}
+
+void
 Darknet3DListener::print()
 {
   int counter = 0;
   ROS_INFO("============> Number of ojects %zu", objects_.size());
   for (const auto& test_obj : objects_)
   {
-    ROS_INFO("============> %d prob=%f  [%s] coords=(%lf %lf, %lf) sizes=[%lf, %lf, %lf]", counter++,
+    ROS_INFO("============> %d prob=%f  [%s] coords=(%lf %lf, %lf) sizes=[%lf, %lf, %lf] speed={%lf, %lf, %lf}", counter++,
       test_obj.probability, test_obj.class_id.c_str(),
       test_obj.central_point.x(), test_obj.central_point.y(), test_obj.central_point.z(),
-      test_obj.size_x, test_obj.size_y, test_obj.size_z);
+      test_obj.size_x, test_obj.size_y, test_obj.size_z,
+      test_obj.speed.x(), test_obj.speed.y(), test_obj.speed.z());
+
+      const ObjectConfiguration& conf = classes_conf_[test_obj.class_id];
+      if (conf.dynamic)
+      {
+        ROS_INFO("Dynamic");
+        for (const auto& point : test_obj.history)
+        {
+          ROS_INFO("\t[%f] (%lf, %lf, %lf)", point.stamp_.toSec(), point.x(), point.y(), point.z());
+        }
+      }
   }
 }
 
