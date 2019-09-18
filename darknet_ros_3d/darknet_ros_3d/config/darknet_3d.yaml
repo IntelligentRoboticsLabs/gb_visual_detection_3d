@@ -1,6 +1,6 @@
 darknet_ros_topic: /darknet_ros/bounding_boxes
 output_bbx3d_topic: /darknet_ros_3d/bounding_boxes
-point_cloud_topic: /camera/depth_registered/points
-working_frame: /camera_link
+point_cloud_topic: /xtion/depth_registered/points
+working_frame: base_footprint
 mininum_detection_thereshold: 0.3
-interested_classes: ["person", "bird"]
+interested_classes: ["person", "bottle", "book", "tie", "cup"]
