@@ -43,11 +43,12 @@
 
 #include <string>
 #include <list>
+#include <algorithm>
 
 namespace darknet_ros_3d
 {
 
-Darknet3DListener::Darknet3DListener( const std::string& working_frame):
+Darknet3DListener::Darknet3DListener(const std::string& working_frame):
   nh_(),
   tf_listener_(tfBuffer_),
   working_frame_(working_frame),
@@ -114,12 +115,12 @@ Darknet3DListener::is_valid_object(const DetectedObject& object)
   if (object.size_z <= conf.min_size_z || object.size_z >= conf.max_size_z) ROS_INFO("Excluded by Size Z");*/
 
   return object.probability > conf.min_probability &&
-   object.central_point.x() > conf.min_x && object.central_point.x() < conf.max_x &&
-   object.central_point.y() > conf.min_y && object.central_point.y() < conf.max_y &&
-   object.central_point.z() > conf.min_z && object.central_point.z() < conf.max_z &&
-   object.size_x > conf.min_size_x && object.size_x < conf.max_size_x &&
-   object.size_y > conf.min_size_y && object.size_y < conf.max_size_y &&
-   object.size_z > conf.min_size_z && object.size_z < conf.max_size_z;
+    object.central_point.x() > conf.min_x && object.central_point.x() < conf.max_x &&
+    object.central_point.y() > conf.min_y && object.central_point.y() < conf.max_y &&
+    object.central_point.z() > conf.min_z && object.central_point.z() < conf.max_z &&
+    object.size_x > conf.min_size_x && object.size_x < conf.max_size_x &&
+    object.size_y > conf.min_size_y && object.size_y < conf.max_size_y &&
+    object.size_z > conf.min_size_z && object.size_z < conf.max_size_z;
 }
 
 void
@@ -175,7 +176,7 @@ Darknet3DListener::objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::C
 
     if (is_valid_object(object))
     {
-      //ROS_INFO("Is valid");
+      // ROS_INFO("Is valid");
       add_object(object);
     }
     else
@@ -198,7 +199,7 @@ Darknet3DListener::check_objects_history()
       while (!object.history.empty() &&
              (ros::Time::now() - object.history.front().stamp_) > conf.max_seconds)
       {
-        //ROS_INFO("Removing because (%lf > %lf)", (ros::Time::now() - object.history.front().stamp_).toSec(),
+        // ROS_INFO("Removing because (%lf > %lf)", (ros::Time::now() - object.history.front().stamp_).toSec(),
         //  conf.max_seconds.toSec());
         object.history.pop_front();
       }
@@ -236,13 +237,13 @@ Darknet3DListener::add_object(const DetectedObject& object)
   {
     if (same_object(existing_object, object))
     {
-      //ROS_INFO("Merging with one existing");
+      // ROS_INFO("Merging with one existing");
       merge_objects(existing_object, object);
       new_object = false;
     }
     else if (!other_object(existing_object, object))
     {
-      //ROS_INFO("Not merging, but it is not other object");
+      // ROS_INFO("Not merging, but it is not other object");
       new_object = false;
     }
   }
@@ -324,7 +325,6 @@ Darknet3DListener::merge_objects(DetectedObject& existing_object, const Detected
     existing_object.history.push_back(point);
 
     update_speed(existing_object);
-
   }
 
   existing_object.central_point.setX(x);
@@ -373,7 +373,8 @@ Darknet3DListener::print()
   ROS_INFO("============> Number of ojects %zu", objects_.size());
   for (const auto& test_obj : objects_)
   {
-    ROS_INFO("============> %d prob=%f  [%s] coords=(%lf %lf, %lf) sizes=[%lf, %lf, %lf] speed={%lf, %lf, %lf}", counter++,
+    ROS_INFO("============> %d prob=%f  [%s] coords=(%lf %lf, %lf) sizes=[%lf, %lf, %lf] speed={%lf, %lf, %lf}",
+      counter++,
       test_obj.probability, test_obj.class_id.c_str(),
       test_obj.central_point.x(), test_obj.central_point.y(), test_obj.central_point.z(),
       test_obj.size_x, test_obj.size_y, test_obj.size_z,

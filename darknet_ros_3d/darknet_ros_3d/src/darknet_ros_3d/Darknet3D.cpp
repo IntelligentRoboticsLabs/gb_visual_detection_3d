@@ -123,7 +123,7 @@ Darknet3D::calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
 
     float maxx, minx, maxy, miny, maxz, minz;
 
-    maxx = maxy = maxz =  std::numeric_limits<float>::min();
+    maxx = maxy = maxz =  -std::numeric_limits<float>::max();
     minx = miny = minz =  std::numeric_limits<float>::max();
 
     for (int i = bbx.xmin; i < bbx.xmax; i++)

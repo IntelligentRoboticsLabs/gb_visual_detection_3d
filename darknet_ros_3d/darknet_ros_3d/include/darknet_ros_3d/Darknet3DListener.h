@@ -45,6 +45,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <map>
 
 namespace darknet_ros_3d
 {
@@ -83,7 +84,7 @@ struct ObjectConfiguration
 class Darknet3DListener
 {
 public:
-  Darknet3DListener(const std::string& working_frame);
+  explicit Darknet3DListener(const std::string& working_frame);
 
   void reset();
   void objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::ConstPtr& msg);
