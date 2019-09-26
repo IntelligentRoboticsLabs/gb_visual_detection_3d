@@ -1,8 +1,30 @@
 <launch>
 
-  <include file="$(find darknet_ros)/launch/darknet_ros.launch" />
+  <!-- Console launch prefix -->
+  <arg name="launch_prefix" default=""/>
 
-  <node pkg="darknet_ros_3d" type="darknet3d_node" name="darknet_3d">
+  <!-- Config and weights folder. -->
+  <arg name="yolo_weights_path"          default="$(find darknet_ros)/yolo_network_config/weights"/>
+  <arg name="yolo_config_path"           default="$(find darknet_ros)/yolo_network_config/cfg"/>
+
+  <!-- ROS and network parameter files -->
+  <arg name="ros_param_file"             default="$(find darknet_ros)/config/ros.yaml"/>
+  <arg name="network_param_file"         default="$(find darknet_ros)/config/yolov2-tiny.yaml"/>
+
+  <!-- Load parameters -->
+  <rosparam command="load" ns="darknet_ros" file="$(arg network_param_file)"/>
+  <rosparam command="load" file="$(find darknet_ros)/config/ros.yaml"/>
+  <param name="darknet_ros/subscribers/camera_reading/topic" type="string" value="/camera/rgb/image_raw" />
+
+  <!-- Start darknet and ros wrapper -->
+  <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="$(arg launch_prefix)">
+
+    <param name="weights_path"          value="$(arg yolo_weights_path)" />
+    <param name="config_path"           value="$(arg yolo_config_path)" />
+  </node>
+
+  <!-- Start darknet ros 3d -->
+  <node pkg="darknet_ros_3d" type="darknet3d_node" name="darknet_3d" output="screen">
     <rosparam command="load" file="$(find darknet_ros_3d)/config/darknet_3d.yaml" />
   </node>
 </launch>
