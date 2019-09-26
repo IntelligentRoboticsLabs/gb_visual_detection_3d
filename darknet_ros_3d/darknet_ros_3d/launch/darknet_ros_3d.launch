@@ -1,5 +1,8 @@
 <launch>
 
+  <!-- Config camera image topic  -->
+  <arg name="camera_rgb_topic" default="/camera/rgb/image_raw" />
+
   <!-- Console launch prefix -->
   <arg name="launch_prefix" default=""/>
 
@@ -14,7 +17,7 @@
   <!-- Load parameters -->
   <rosparam command="load" ns="darknet_ros" file="$(arg network_param_file)"/>
   <rosparam command="load" file="$(find darknet_ros)/config/ros.yaml"/>
-  <param name="darknet_ros/subscribers/camera_reading/topic" type="string" value="/camera/rgb/image_raw" />
+  <param name="darknet_ros/subscribers/camera_reading/topic" type="string" value="$(arg camera_rgb_topic)" />
 
   <!-- Start darknet and ros wrapper -->
   <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="$(arg launch_prefix)">
