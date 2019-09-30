@@ -266,9 +266,9 @@ Darknet3DListener::other_object(const DetectedObject& obj1, const DetectedObject
     ROS_INFO("\tZ (dist %lf < %lf)", fabs(obj1.central_point.z() - obj2.central_point.z()), (obj1.size_z / 1.8 + obj2.size_z / 1.8));
     */
   return  obj1.class_id != obj2.class_id ||
-          (fabs(obj1.central_point.x() - obj2.central_point.x()) > (obj1.size_x / 1.8 + obj2.size_x / 1.8)) ||
-          (fabs(obj1.central_point.y() - obj2.central_point.y()) > (obj1.size_y / 1.8 + obj2.size_y / 1.8)) ||
-          (fabs(obj1.central_point.z() - obj2.central_point.z()) > (obj1.size_z / 1.8 + obj2.size_z / 1.8));
+          (fabs(obj1.central_point.x() - obj2.central_point.x()) > (obj1.size_x / 1.9 + obj2.size_x / 1.9)) ||
+          (fabs(obj1.central_point.y() - obj2.central_point.y()) > (obj1.size_y / 1.9 + obj2.size_y / 1.9)) ||
+          (fabs(obj1.central_point.z() - obj2.central_point.z()) > (obj1.size_z / 1.9 + obj2.size_z / 1.9));
 }
 
 bool
