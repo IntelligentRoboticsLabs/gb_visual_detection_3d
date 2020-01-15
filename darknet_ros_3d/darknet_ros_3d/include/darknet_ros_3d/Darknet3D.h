@@ -84,7 +84,7 @@ private:
   std::string pointcloud_topic_;
   std::string working_frame_;
   std::vector<std::string> interested_classes_;
-  float mininum_detection_thereshold_;
+  float mininum_detection_thereshold_, minimum_probability_;
 };
 
 };  // namespace darknet_ros_3d

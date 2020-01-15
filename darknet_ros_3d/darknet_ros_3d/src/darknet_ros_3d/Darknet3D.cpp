@@ -72,12 +72,14 @@ Darknet3D::initParams()
   pointcloud_topic_ = "/camera/depth_registered/points";
   working_frame_ = "/camera_link";
   mininum_detection_thereshold_ = 0.5f;
+  minimum_probability_ = 0.3f;
 
   nh_.param("darknet_ros_topic", input_bbx_topic_, input_bbx_topic_);
   nh_.param("output_bbx3d_topic", output_bbx3d_topic_, output_bbx3d_topic_);
   nh_.param("point_cloud_topic", pointcloud_topic_, pointcloud_topic_);
   nh_.param("working_frame", working_frame_, working_frame_);
   nh_.param("mininum_detection_thereshold", mininum_detection_thereshold_, mininum_detection_thereshold_);
+  nh_.param("minimum_probability", minimum_probability_, minimum_probability_);
   nh_.param("interested_classes", interested_classes_, interested_classes_);
 }
 
@@ -104,7 +106,7 @@ Darknet3D::calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
 
   for (auto bbx : original_bboxes_)
   {
-    if ((bbx.probability < mininum_detection_thereshold_) ||
+    if ((bbx.probability < minimum_probability_) ||
         (std::find(interested_classes_.begin(), interested_classes_.end(), bbx.Class) == interested_classes_.end()))
     {
       continue;
