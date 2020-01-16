@@ -68,7 +68,7 @@ void
 Darknet3D::initParams()
 {
   input_bbx_topic_ = "/darknet_ros/bounding_boxes";
-  output_bbx3d_topic_ = "darknet_ros_3d/bounding_boxes";
+  output_bbx3d_topic_ = "/darknet_ros_3d/bounding_boxes";
   pointcloud_topic_ = "/camera/depth_registered/points";
   working_frame_ = "/camera_link";
   mininum_detection_thereshold_ = 0.5f;
