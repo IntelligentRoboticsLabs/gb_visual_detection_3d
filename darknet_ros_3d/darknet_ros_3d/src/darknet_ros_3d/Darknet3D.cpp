@@ -56,7 +56,7 @@ Darknet3D::Darknet3D():
   initParams();
 
   darknet3d_pub_ = nh_.advertise<darknet_ros_3d_msgs::BoundingBoxes3d>(output_bbx3d_topic_, 100);
-  markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/darknet_ros_3d_markers", 100);
+  markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/darknet_ros_3d/markers", 100);
 
   yolo_sub_ = nh_.subscribe(input_bbx_topic_, 1, &Darknet3D::darknetCb, this);
   pointCloud_sub_ = nh_.subscribe(pointcloud_topic_, 1, &Darknet3D::pointCloudCb, this);
