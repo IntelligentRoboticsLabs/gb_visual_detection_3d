@@ -53,7 +53,7 @@ You must to clone *gb_visual_detection_3d* into *src* folder located in your cat
 
 First of all, is necessary to run camera driver.
 
-For xtion RGBD camera, you have to install *openni2_launch* package and then, type ``roslaunch openni2_launch openni2.launch``. If you have any other RGBD camera, you have to launch his driver.
+For xtion RGBD camera, you have to install *openni2_launch* package and then, type ``roslaunch openni2_launch openni2.launch``. If you have any other RGBD camera, like Intel RealSense, you have to launch his driver.
 
 Now, you can run *darknet_ros_3d* typing ``roslaunch darknet_ros_3d darknet_ros_3d.launch``. If you want to change default parameters like topics it subscribe, you can change it in the configuration file located at ``~/catkin_ws/src/gb_visual_detection_3d/darknet_ros_3d/darknet_ros_3d/config/``. Default parameters are the following:
 
@@ -61,17 +61,21 @@ Now, you can run *darknet_ros_3d* typing ``roslaunch darknet_ros_3d darknet_ros_
 
 * **mininum_detection_threshold:** Maximum distance range between any pixel of image and the center pixel of the image to be considered.
 
+* **minimum_probability:** Minimum object probability (provided by *darknet_ros*) to be considered.
+
 * **darknet_ros_topic:** topic where darknet ros publicates his bounding boxes. ``/darknet_ros/bounding_boxes``
 
-* **point_cloud_topic:** topic where point cloud is published from camera. By default: ``/camera/depth_registered/points``
+* **point_cloud_topic:** topic where point cloud is published from camera. By default: ``/camera/depth_registered/points``. **It is important that point cloud topic be of PointCloud2 type and it be depth_registered**
 
 * **working_frame:** frame that all measurements are based on. By default, *camera_link*.
+
+**NOTE:** color image topic that darknet_ros needs, can be edited in the launch file retyping *camera_rgb_topic* argument.
 
 ## Nodes
 
 ### darknet3d_node
 
-*darknet3d_node* provide bounding boxes. This bounding boxes are combinated with point cloud informatiion to calculate (xmin, ymin, zmin) and (xmax, ymax, zmax) 3D coordinates.
+*darknet3d_node* provide bounding boxes. This bounding boxes are combinated with point cloud information to calculate (xmin, ymin, zmin) and (xmax, ymax, zmax) 3D coordinates.
 
 Then, *darknet_ros_3d* publicates his own bounding boxes array of *BoundingBoxes3d* type, which is an array of *BoundingBox3d* that contains the following information:
 ```
@@ -108,4 +112,4 @@ bounding_boxes:
     zmax: 0.186251342297
 ```
 
-You can visualize the markers on *rviz* adding **MarkerArray** and subscribing to topic ``/darknet_ros_3d_markers``.
+You can visualize the markers on *rviz* adding **MarkerArray** and subscribing to topic ``/darknet_ros_3d/markers``.
