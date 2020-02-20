@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(darknet_ros_3d_msgs)
+project(gb_detection_3d_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
   message_generation
