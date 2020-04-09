@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>darknet_ros_3d_msgs</name>
+  <name>gb_detection_3d_msgs</name>
   <version>0.0.0</version>
   <description>The visual_perception_msgs package</description>
 
-  <maintainer email="fmrico@gmail.com">Francisco Martín</maintainer>
+  <maintainer email="fergonzaramos@yahoo.es">Fernando González</maintainer>
 
   <license>BSD</license>
 

@@ -39,7 +39,7 @@
 
 #include <ros/ros.h>
 
-#include <darknet_ros_3d_msgs/BoundingBoxes3d.h>
+#include <gb_detection_3d_msgs/BoundingBoxes3d.h>
 #include <tf2_ros/transform_listener.h>
 
 #include <string>
@@ -87,7 +87,7 @@ public:
   explicit Darknet3DListener(const std::string& working_frame);
 
   void reset();
-  void objectsCallback(const darknet_ros_3d_msgs::BoundingBoxes3d::ConstPtr& msg);
+  void objectsCallback(const gb_detection_3d_msgs::BoundingBoxes3d::ConstPtr& msg);
 
   const std::vector<DetectedObject>& get_objects() {return objects_;}
 

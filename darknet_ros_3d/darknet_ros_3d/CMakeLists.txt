@@ -11,7 +11,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   darknet_ros_msgs
-  darknet_ros_3d_msgs
+  gb_detection_3d_msgs
   sensor_msgs
   tf2_ros
   tf2_geometry_msgs

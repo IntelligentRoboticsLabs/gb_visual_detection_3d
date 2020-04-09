@@ -11,7 +11,7 @@
 
   </description>
 
-  <maintainer email="fergonzaramos@yahoo.es">fernando</maintainer>
+  <maintainer email="fergonzaramos@yahoo.es">Fernando González</maintainer>
 
   <license>BSD</license>
 
@@ -19,7 +19,7 @@
 
   <build_depend>roscpp</build_depend>
   <build_depend>darknet_ros_msgs</build_depend>
-  <build_depend>darknet_ros_3d_msgs</build_depend>
+  <build_depend>gb_detection_3d_msgs</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
@@ -30,7 +30,7 @@
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>darknet_ros_msgs</build_export_depend>
   <build_export_depend>tf2_geometry_msgs</build_export_depend>
-  <build_export_depend>darknet_ros_3d_msgs</build_export_depend>
+  <build_export_depend>gb_detection_3d_msgs</build_export_depend>
   <build_export_depend>sensor_msgs</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
   <build_export_depend>pcl_ros</build_export_depend>
@@ -40,7 +40,7 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>darknet_ros_msgs</exec_depend>
-  <exec_depend>darknet_ros_3d_msgs</exec_depend>
+  <exec_depend>gb_detection_3d_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
