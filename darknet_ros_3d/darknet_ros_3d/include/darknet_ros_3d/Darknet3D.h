@@ -32,61 +32,75 @@
 *   POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Francisco Martín fmrico@gmail.com */
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
 #ifndef DARKNET_ROS_3D_DARKNET3D_H
 #define DARKNET_ROS_3D_DARKNET3D_H
 
-#include <ros/ros.h>
-
-#include <gb_detection_3d_msgs/BoundingBoxes3d.h>
-#include <darknet_ros_msgs/BoundingBoxes.h>
-#include <sensor_msgs/PointCloud2.h>
-
-#include <pcl_ros/point_cloud.h>
-#include <tf/transform_listener.h>
-
-#include <vector>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
+#include <lifecycle_msgs/msg/state.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <tf2/convert.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 #include <string>
+
+#include "darknet_ros_msgs/msg/bounding_boxes.hpp"
+#include "darknet_ros_msgs/msg/bounding_box.hpp"
+#include "gb_visual_detection_3d_msgs/msg/bounding_boxes3d.hpp"
+#include <visualization_msgs/msg/marker_array.hpp>
 
 namespace darknet_ros_3d
 {
 
-class Darknet3D
+class Darknet3D: public rclcpp_lifecycle::LifecycleNode
 {
 public:
   Darknet3D();
-
-  virtual void update();
+  void update();
 
 private:
-  void initParams();
-  void pointCloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg);
-  void darknetCb(const darknet_ros_msgs::BoundingBoxes::ConstPtr& msg);
-  void publish_markers(const gb_detection_3d_msgs::BoundingBoxes3d& boxes);
+  using CallbackReturnT =
+    rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-  void calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
-      const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
-      gb_detection_3d_msgs::BoundingBoxes3d* boxes);
+  CallbackReturnT on_configure(const rclcpp_lifecycle::State & state);
+  CallbackReturnT on_activate(const rclcpp_lifecycle::State & state);
+  CallbackReturnT on_deactivate(const rclcpp_lifecycle::State & state);
+  CallbackReturnT on_cleanup(const rclcpp_lifecycle::State & state);
+  CallbackReturnT on_shutdown(const rclcpp_lifecycle::State & state);
+  CallbackReturnT on_error(const rclcpp_lifecycle::State & state);
 
-  ros::NodeHandle nh_;
-  ros::Subscriber yolo_sub_, pointCloud_sub_;
-  ros::Publisher darknet3d_pub_, markers_pub_;
-  tf::TransformListener tfListener_;
+  void init_params();
+  void pointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+  void darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg);
+  void calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
+    sensor_msgs::msg::PointCloud cloud_pc, gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes);
 
-  std::vector<darknet_ros_msgs::BoundingBox> original_bboxes_;
-  sensor_msgs::PointCloud2 point_cloud_;
-  ros::Time last_detection_ts_;
+    void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);
 
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloud_sub_;
+  rclcpp::Subscription<darknet_ros_msgs::msg::BoundingBoxes>::SharedPtr darknet_ros_sub_;
+  rclcpp_lifecycle::LifecyclePublisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>::SharedPtr darknet3d_pub_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr markers_pub_;
+
+  rclcpp::Clock clock_;
+  tf2_ros::Buffer tfBuffer_;
+  tf2_ros::TransformListener tfListener_;
+
+  sensor_msgs::msg::PointCloud2 point_cloud_;
+  rclcpp::Time last_detection_ts_;
   std::string input_bbx_topic_;
   std::string output_bbx3d_topic_;
   std::string pointcloud_topic_;
   std::string working_frame_;
-  std::vector<std::string> interested_classes_;
-  float mininum_detection_thereshold_, minimum_probability_;
+  std::vector<std::string> interested_classes_ = {};
+  std::vector<darknet_ros_msgs::msg::BoundingBox> original_bboxes_;
+  float maximum_detection_threshold_, minimum_probability_;
+  bool pc_received_;
 };
 
-};  // namespace darknet_ros_3d
+} //end namespace darknet_ros_3d
 
-#endif  // DARKNET_ROS_3D_DARKNET3D_H
+#endif

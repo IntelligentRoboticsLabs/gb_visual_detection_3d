@@ -1,53 +1,41 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>darknet_ros_3d</name>
-  <version>0.0.0</version>
-  <description>
-    The darknet_ros_3d package.
-    This package is composed by only one node whose job is to sunscribe
-    to Darknet ROS bounding boxes and to depth camera information.
-    Then, it publicates in topic "/darknet_ros3d/bounding_boxes" 3d bounding boxes
-    adding the distances are they
-
-  </description>
-
-  <maintainer email="fergonzaramos@yahoo.es">Fernando González</maintainer>
-
+  <version>1.0.0</version>
+  <description>darknet_ros_3d package: Package for 3D objects detection using rgbd camera</description>
+  <maintainer email="fergonzaramos@yahoo.es">Fernando Gonzalez</maintainer>
   <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>roscpp</build_depend>
-  <build_depend>darknet_ros_msgs</build_depend>
-  <build_depend>gb_detection_3d_msgs</build_depend>
-  <build_depend>tf2_geometry_msgs</build_depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclcpp_lifecycle</build_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
+
+  <build_depend>lifecycle_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
+  <build_depend>darknet_ros_msgs</build_depend>
+  <build_depend>gb_visual_detection_3d_msgs</build_depend>
+  <build_depend>tf2</build_depend>
   <build_depend>tf2_ros</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>roslint</build_depend>
+  <build_depend>tf2_sensor_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>eigen</build_depend>
 
-  <build_export_depend>roscpp</build_export_depend>
-  <build_export_depend>darknet_ros_msgs</build_export_depend>
-  <build_export_depend>tf2_geometry_msgs</build_export_depend>
-  <build_export_depend>gb_detection_3d_msgs</build_export_depend>
-  <build_export_depend>sensor_msgs</build_export_depend>
-  <build_export_depend>tf2_ros</build_export_depend>
-  <build_export_depend>pcl_ros</build_export_depend>
-  <build_export_depend>pcl_conversions</build_export_depend>
-  <build_export_depend>roslint</build_export_depend>
-
-  <exec_depend>roscpp</exec_depend>
-  <exec_depend>tf2_geometry_msgs</exec_depend>
-  <exec_depend>darknet_ros_msgs</exec_depend>
-  <exec_depend>gb_detection_3d_msgs</exec_depend>
+  <exec_depend>lifecycle_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>darknet_ros_msgs</exec_depend>
+  <exec_depend>gb_visual_detection_3d_msgs</exec_depend>
+  <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
-  <exec_depend>pcl_ros</exec_depend>
-  <exec_depend>pcl_conversions</exec_depend>
-  <exec_depend>roslint</exec_depend>
+  <exec_depend>tf2_sensor_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
 
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

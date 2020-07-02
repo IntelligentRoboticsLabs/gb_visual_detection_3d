@@ -32,27 +32,30 @@
 *   POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/* Author: Francisco Martín fmrico@gmail.com */
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
-#include <ros/ros.h>
-
+#include <rclcpp/rclcpp.hpp>
 #include "darknet_ros_3d/Darknet3D.h"
 
-int main(int argc, char **argv)
+int
+main(int argc, char *argv[])
 {
-  ros::init(argc, argv, "darknet_3d");
-  darknet_ros_3d::Darknet3D darknet3d;
+  rclcpp::init(argc, argv);
 
-  ros::Rate loop_rate(10);
+  auto node = std::make_shared<darknet_ros_3d::Darknet3D>();
 
-  while (ros::ok())
+  rclcpp::Rate loop_rate(10); //10Hz
+
+  while(rclcpp::ok())
   {
-    darknet3d.update();
-
-    ros::spinOnce();
+    rclcpp::spin_some(node->get_node_base_interface());
+    //update
+    node->update();
     loop_rate.sleep();
   }
 
-  return 0;
+  node->deactivate();
+  rclcpp::shutdown();
+
+  exit(EXIT_SUCCESS);
 }
