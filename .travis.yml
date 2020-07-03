@@ -92,16 +92,13 @@ before_install:
 # Create a catkin workspace with the package under integration.
 install:
   - mkdir -p ~/ros2_ws/src
-  - cd ~/ros2_ws/
+  - cd ~/ros2_ws/src
   #- catkin_init_workspace
-  - colcon build
   # Create the devel/setup.bash (run catkin_make with an empty workspace) and
   # source it to set the path variables.
   #- cd ~/catkin_ws
   #- catkin_make
-  - source install/setup.bash
   # Add the package under integration to the workspace using a symlink.
-  - cd ~/ros2_ws/src
   - ln -s $CI_SOURCE_PATH
 
 # Install all dependencies, using wstool first and rosdep second.
