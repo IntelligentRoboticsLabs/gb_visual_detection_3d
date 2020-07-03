@@ -88,15 +88,17 @@ before_install:
   - sudo apt update
   - sudo apt install -y ros-eloquent-ros-base
   - source /opt/ros/$ROS_DISTRO/setup.bash
+  - sudo apt install python3-colcon-common-extensions
 
 # Create a catkin workspace with the package under integration.
 install:
   - mkdir -p ~/ros2_ws/src
-  - cd ~/ros2_ws/src
+  - cd ~/ros2_ws/
+  - colcon build
   #- catkin_init_workspace
   # Create the devel/setup.bash (run catkin_make with an empty workspace) and
   # source it to set the path variables.
-  #- cd ~/catkin_ws
+  - cd ~/ros2_ws/src
   #- catkin_make
   # Add the package under integration to the workspace using a symlink.
   - ln -s $CI_SOURCE_PATH
