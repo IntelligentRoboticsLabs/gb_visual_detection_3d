@@ -1,9 +1,9 @@
 repositories:
-	darknet_ros:
-		type: git
-		url: https://github.com/leggedrobotics/darknet_ros.git
-		version: ros2
-	rosidl:
-		type: git
-		url: https://github.com/ros2/rosidl_defaults.git
-		version: eloquent
+    darknet_ros:
+        type: git
+        url: https://github.com/leggedrobotics/darknet_ros.git
+        version: ros2
+    rosidl:
+        type: git
+        url: https://github.com/ros2/rosidl_defaults.git
+        version: eloquent
