@@ -43,6 +43,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <algorithm>
 
 #include "darknet_ros_3d/Darknet3D.h"
 #include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
@@ -322,4 +323,4 @@ namespace darknet_ros_3d
                 this->get_name(), state.label().c_str());
     return CallbackReturnT::SUCCESS;
   }
-} //end namespace darknet_ros_3ds
+} // end namespace darknet_ros_3d

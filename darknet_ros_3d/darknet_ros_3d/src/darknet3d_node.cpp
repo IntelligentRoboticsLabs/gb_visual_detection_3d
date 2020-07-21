@@ -38,7 +38,7 @@
 #include "darknet_ros_3d/Darknet3D.h"
 
 int
-main(int argc, char *argv[])
+main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
 

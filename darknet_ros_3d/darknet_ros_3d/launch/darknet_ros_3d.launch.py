@@ -4,6 +4,7 @@ from launch_ros.actions import Node
 
 params_file = '/config/darknet_3d.yaml'
 
+
 def generate_launch_description():
 
     # Load params
@@ -12,11 +13,11 @@ def generate_launch_description():
 
     # Create Node:
     darknet3d_node = Node(
-    package='darknet_ros_3d',
-    node_executable='darknet3d_node',
-    node_name='darknet3d_node',
-    output='screen',
-    parameters=[config_file_path]
+        package='darknet_ros_3d',
+        node_executable='darknet3d_node',
+        node_name='darknet3d_node',
+        output='screen',
+        parameters=[config_file_path]
     )
 
     ld = LaunchDescription()
