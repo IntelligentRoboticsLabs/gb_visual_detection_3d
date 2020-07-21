@@ -111,12 +111,10 @@ namespace darknet_ros_3d
     boxes->header.stamp = cloud_pc2.header.stamp;
     boxes->header.frame_id = cloud_pc2.header.frame_id;
 
-    for (auto bbx : original_bboxes_)
-    {
+    for (auto bbx : original_bboxes_){
       if ((bbx.probability < minimum_probability_) ||
         (std::find(interested_classes_.begin(), interested_classes_.end(),
-          bbx.class_id) == interested_classes_.end()))
-      {
+          bbx.class_id) == interested_classes_.end())){
         continue;
       }
 
@@ -136,10 +134,8 @@ namespace darknet_ros_3d
       maxx = maxy = maxz =  -std::numeric_limits<float>::max();
       minx = miny = minz =  std::numeric_limits<float>::max();
 
-      for (int i = bbx.xmin; i < bbx.xmax; i++)
-      {
-        for (int j = bbx.ymin; j < bbx.ymax; j++)
-        {
+      for (int i = bbx.xmin; i < bbx.xmax; i++){
+        for (int j = bbx.ymin; j < bbx.ymax; j++){
           pc_index = (j* cloud_pc2.width) + i;
           geometry_msgs::msg::Point32 point =  cloud_pc.points[pc_index];
 
@@ -179,8 +175,7 @@ namespace darknet_ros_3d
     visualization_msgs::msg::MarkerArray msg;
 
     int counter_id = 0;
-    for (auto bb : boxes.bounding_boxes)
-    {
+    for (auto bb : boxes.bounding_boxes){
       visualization_msgs::msg::Marker bbx_marker;
 
       bbx_marker.header.frame_id = working_frame_;
@@ -228,14 +223,11 @@ namespace darknet_ros_3d
     sensor_msgs::msg::PointCloud cloud_pc;
     gb_visual_detection_3d_msgs::msg::BoundingBoxes3d msg;
 
-    try
-    {
+    try{
       transform = tfBuffer_.lookupTransform(working_frame_, point_cloud_.header.frame_id,
         point_cloud_.header.stamp, tf2::durationFromSec(2.0));
 
-    }
-    catch(tf2::TransformException& ex)
-    {
+    }catch(tf2::TransformException& ex){
       RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n",
         ex.what(), "quitting callback");
       return;
