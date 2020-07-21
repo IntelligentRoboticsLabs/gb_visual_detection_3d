@@ -5,5 +5,5 @@ darknet3d_node:
     point_cloud_topic: /camera/pointcloud
     working_frame: camera_link
     maximum_detection_threshold: 0.2
-    minimum_probability: 0.6
-    interested_classes: ["person", "book", "italian_biscotti", "smoothie", "mango_juice", "crisps", "water", "sandwich", "toastie", "veggie_pot", "wrap", "espresso", "cappuccino", "americano"]
+    minimum_probability: 0.4
+    interested_classes: ["person", "book", "bottle"]

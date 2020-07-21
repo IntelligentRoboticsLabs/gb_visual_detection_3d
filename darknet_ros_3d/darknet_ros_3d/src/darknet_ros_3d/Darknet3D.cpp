@@ -59,7 +59,7 @@ namespace darknet_ros_3d
     tfBuffer_(std::make_shared<rclcpp::Clock>(clock_)), tfListener_(tfBuffer_, true),
     pc_received_(false)
   {
-    //init params
+    // init params
     this->declare_parameter("darknet_ros_topic", "/darknet_ros/bounding_boxes");
     this->declare_parameter("output_bbx3d_topic", "/darknet_ros_3d/bounding_boxes");
     this->declare_parameter("point_cloud_topic", "/camera/depth_registered/points");
@@ -72,10 +72,16 @@ namespace darknet_ros_3d
 
     pointCloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(pointcloud_topic_, 1,
             std::bind(&Darknet3D::pointCloudCb, this, std::placeholders::_1));
-    darknet_ros_sub_ = this->create_subscription<darknet_ros_msgs::msg::BoundingBoxes>(input_bbx_topic_, 1,
-            std::bind(&Darknet3D::darknetCb, this, std::placeholders::_1));
-    darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>(output_bbx3d_topic_, 100);
-    markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/darknet_ros_3d/markers", 1);
+
+    darknet_ros_sub_ = this->create_subscription<darknet_ros_msgs::msg::BoundingBoxes>
+                      (input_bbx_topic_, 1, std::bind(&Darknet3D::darknetCb,
+                      this, std::placeholders::_1));
+
+    darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>
+                      (output_bbx3d_topic_, 100);
+
+    markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>
+                    ("/darknet_ros_3d/markers", 1);
 
     last_detection_ts_ = clock_.now();
 
@@ -98,7 +104,8 @@ namespace darknet_ros_3d
 
   void
   Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
-    sensor_msgs::msg::PointCloud cloud_pc, gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
+    sensor_msgs::msg::PointCloud cloud_pc,
+    gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
   {
     boxes->header.stamp = cloud_pc2.header.stamp;
     boxes->header.frame_id = cloud_pc2.header.frame_id;
@@ -106,7 +113,8 @@ namespace darknet_ros_3d
     for (auto bbx : original_bboxes_)
     {
       if ((bbx.probability < minimum_probability_) ||
-          (std::find(interested_classes_.begin(), interested_classes_.end(), bbx.class_id) == interested_classes_.end()))
+          (std::find(interested_classes_.begin(), interested_classes_.end(),
+            bbx.class_id) == interested_classes_.end()))
       {
         continue;
       }
@@ -227,7 +235,8 @@ namespace darknet_ros_3d
     }
     catch(tf2::TransformException& ex)
     {
-      RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n", ex.what(), "quitting callback");
+      RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n",
+                    ex.what(), "quitting callback");
       return;
     }
     tf2::doTransform<sensor_msgs::msg::PointCloud2>(point_cloud_, local_pointcloud, transform);
@@ -244,7 +253,8 @@ namespace darknet_ros_3d
   CallbackReturnT
   Darknet3D::on_configure(const rclcpp_lifecycle::State & state)
   {
-    RCLCPP_INFO(this->get_logger(), "[%s] Configuring from [%s] state...", this->get_name(), state.label().c_str());
+    RCLCPP_INFO(this->get_logger(), "[%s] Configuring from [%s] state...",
+                this->get_name(), state.label().c_str());
 
     this->get_parameter("darknet_ros_topic", input_bbx_topic_);
     this->get_parameter("output_bbx3d_topic", output_bbx3d_topic_);
@@ -260,7 +270,8 @@ namespace darknet_ros_3d
   CallbackReturnT
   Darknet3D::on_activate(const rclcpp_lifecycle::State & state)
   {
-    RCLCPP_INFO(this->get_logger(), "[%s] Activating from [%s] state...", this->get_name(), state.label().c_str());
+    RCLCPP_INFO(this->get_logger(), "[%s] Activating from [%s] state...",
+                this->get_name(), state.label().c_str());
 
     darknet3d_pub_->on_activate();
     markers_pub_->on_activate();
@@ -271,7 +282,8 @@ namespace darknet_ros_3d
   CallbackReturnT
   Darknet3D::on_deactivate(const rclcpp_lifecycle::State & state)
   {
-    RCLCPP_INFO(this->get_logger(), "[%s] Deactivating from [%s] state...", this->get_name(), state.label().c_str());
+    RCLCPP_INFO(this->get_logger(), "[%s] Deactivating from [%s] state...",
+                this->get_name(), state.label().c_str());
 
     darknet3d_pub_->on_deactivate();
     markers_pub_->on_deactivate();
@@ -282,7 +294,8 @@ namespace darknet_ros_3d
   CallbackReturnT
   Darknet3D::on_cleanup(const rclcpp_lifecycle::State & state)
   {
-    RCLCPP_INFO(this->get_logger(), "[%s] Cleanning Up from [%s] state...", this->get_name(), state.label().c_str());
+    RCLCPP_INFO(this->get_logger(), "[%s] Cleanning Up from [%s] state...",
+                this->get_name(), state.label().c_str());
 
     darknet3d_pub_.reset();
     markers_pub_.reset();
@@ -293,7 +306,8 @@ namespace darknet_ros_3d
   CallbackReturnT
   Darknet3D::on_shutdown(const rclcpp_lifecycle::State & state)
   {
-    RCLCPP_INFO(this->get_logger(), "[%s] Shutting Down from [%s] state...", this->get_name(), state.label().c_str());
+    RCLCPP_INFO(this->get_logger(), "[%s] Shutting Down from [%s] state...",
+                this->get_name(), state.label().c_str());
 
     darknet3d_pub_.reset();
     markers_pub_.reset();
@@ -304,7 +318,8 @@ namespace darknet_ros_3d
   CallbackReturnT
   Darknet3D::on_error(const rclcpp_lifecycle::State & state)
   {
-    RCLCPP_INFO(this->get_logger(), "[%s] Shutting Down from [%s] state...", this->get_name(), state.label().c_str());
+    RCLCPP_INFO(this->get_logger(), "[%s] Shutting Down from [%s] state...",
+                this->get_name(), state.label().c_str());
     return CallbackReturnT::SUCCESS;
   }
 } //end namespace darknet_ros_3ds
