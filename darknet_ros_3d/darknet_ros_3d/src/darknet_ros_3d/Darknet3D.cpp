@@ -126,8 +126,9 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
     int pc_index = (center_y * cloud_pc2.width) + center_x;
     geometry_msgs::msg::Point32 center_point = cloud_pc.points[pc_index];
 
-    if (std::isnan(center_point.x))
+    if (std::isnan(center_point.x)) {
       continue;
+    }
 
     float maxx, minx, maxy, miny, maxz, minz;
 
@@ -139,11 +140,13 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
         pc_index = (j * cloud_pc2.width) + i;
         geometry_msgs::msg::Point32 point = cloud_pc.points[pc_index];
 
-        if (std::isnan(point.x))
+        if (std::isnan(point.x)) {
           continue;
+        }
 
-        if (fabs(point.x - center_point.x) > maximum_detection_threshold_)
+        if (fabs(point.x - center_point.x) > maximum_detection_threshold_) {
           continue;
+        }
 
         maxx = std::max(point.x, maxx);
         maxy = std::max(point.y, maxy);
@@ -205,18 +208,21 @@ Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d box
     msg.markers.push_back(bbx_marker);
   }
 
-  if (markers_pub_->is_activated())
+  if (markers_pub_->is_activated()) {
     markers_pub_->publish(msg);
+  }
 }
 
 void
 Darknet3D::update()
 {
-  if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     return;
+  }
 
-  if ((clock_.now() - last_detection_ts_).seconds() > 2.0 || !pc_received_)
+  if ((clock_.now() - last_detection_ts_).seconds() > 2.0 || !pc_received_) {
     return;
+  }
 
   sensor_msgs::msg::PointCloud2 local_pointcloud;
   geometry_msgs::msg::TransformStamped transform;
@@ -237,8 +243,9 @@ Darknet3D::update()
   calculate_boxes(local_pointcloud, cloud_pc, &msg);
   publish_markers(msg);
 
-  if (darknet3d_pub_->is_activated())
+  if (darknet3d_pub_->is_activated()) {
     darknet3d_pub_->publish(msg);
+  }
 }
 
 CallbackReturnT

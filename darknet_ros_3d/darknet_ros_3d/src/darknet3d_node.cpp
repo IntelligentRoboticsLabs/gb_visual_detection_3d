@@ -35,8 +35,8 @@
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
 #include "darknet_ros_3d/Darknet3D.h"
-#include <rclcpp/rclcpp.hpp>
 #include <memory>
+#include <rclcpp/rclcpp.hpp>
 
 int
 main(int argc, char ** argv)
@@ -49,7 +49,7 @@ main(int argc, char ** argv)
 
   while (rclcpp::ok()) {
     rclcpp::spin_some(node->get_node_base_interface());
-    
+
     // update
 
     node->update();
