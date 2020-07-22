@@ -215,7 +215,7 @@ Darknet3D::update()
   if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     return;
 
-  if ((clock_.now() - last_detection_ts_).seconds() > 2.0 || ! pc_received_)
+  if ((clock_.now() - last_detection_ts_).seconds() > 2.0 || !pc_received_)
     return;
 
   sensor_msgs::msg::PointCloud2 local_pointcloud;
