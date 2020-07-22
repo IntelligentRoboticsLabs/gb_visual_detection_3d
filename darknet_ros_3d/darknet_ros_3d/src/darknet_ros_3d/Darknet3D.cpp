@@ -35,17 +35,17 @@
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
 #include "darknet_ros_3d/Darknet3D.h"
+#include <tf2/transform_datatypes.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <algorithm>
+#include <memory>
+#include <limits>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/point32.hpp>
 #include <sensor_msgs/point_cloud_conversion.hpp>
 #include <sensor_msgs/msg/point_field.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <tf2/transform_datatypes.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <algorithm>
-#include <memory>
-#include <limits>
 #include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
 
 using std::placeholders::_1;
@@ -59,7 +59,8 @@ Darknet3D::Darknet3D()
   tfBuffer_(std::make_shared<rclcpp::Clock>(clock_)), tfListener_(tfBuffer_, true),
   pc_received_(false)
 {
-  // init params
+
+  // Init Params
 
   this->declare_parameter("darknet_ros_topic", "/darknet_ros/bounding_boxes");
   this->declare_parameter("output_bbx3d_topic", "/darknet_ros_3d/bounding_boxes");
@@ -225,7 +226,6 @@ Darknet3D::update()
   try {
     transform = tfBuffer_.lookupTransform(working_frame_, point_cloud_.header.frame_id,
       point_cloud_.header.stamp, tf2::durationFromSec(2.0));
-
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n",
       ex.what(), "quitting callback");
@@ -239,7 +239,6 @@ Darknet3D::update()
 
   if (darknet3d_pub_->is_activated())
     darknet3d_pub_->publish(msg);
-
 }
 
 CallbackReturnT
@@ -314,4 +313,5 @@ Darknet3D::on_error(const rclcpp_lifecycle::State & state)
     this->get_name(), state.label().c_str());
   return CallbackReturnT::SUCCESS;
 }
+
 } // end namespace darknet_ros_3d
