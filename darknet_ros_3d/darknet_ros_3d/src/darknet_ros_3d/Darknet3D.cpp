@@ -37,9 +37,6 @@
 #include "darknet_ros_3d/Darknet3D.h"
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <algorithm>
-#include <memory>
-#include <limits>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/point32.hpp>
@@ -47,6 +44,9 @@
 #include <sensor_msgs/msg/point_field.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
+#include <algorithm>
+#include <memory>
+#include <limits>
 
 using std::placeholders::_1;
 using CallbackReturnT =
@@ -59,7 +59,6 @@ Darknet3D::Darknet3D()
   tfBuffer_(std::make_shared<rclcpp::Clock>(clock_)), tfListener_(tfBuffer_, true),
   pc_received_(false)
 {
-
   // Init Params
 
   this->declare_parameter("darknet_ros_topic", "/darknet_ros/bounding_boxes");

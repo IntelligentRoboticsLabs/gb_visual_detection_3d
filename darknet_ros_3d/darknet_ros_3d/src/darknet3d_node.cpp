@@ -35,8 +35,8 @@
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
 #include "darknet_ros_3d/Darknet3D.h"
-#include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <memory>
 
 int
 main(int argc, char ** argv)
@@ -45,7 +45,9 @@ main(int argc, char ** argv)
 
   auto node = std::make_shared<darknet_ros_3d::Darknet3D>();
 
-  rclcpp::Rate loop_rate(10); // 10Hz
+  // Configure loop rate to 10Hz
+
+  rclcpp::Rate loop_rate(10);
 
   while (rclcpp::ok()) {
     rclcpp::spin_some(node->get_node_base_interface());
