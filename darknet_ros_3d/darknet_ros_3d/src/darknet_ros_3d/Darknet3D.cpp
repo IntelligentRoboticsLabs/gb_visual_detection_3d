@@ -55,8 +55,8 @@ using CallbackReturnT =
 
 namespace darknet_ros_3d
 {
-Darknet3D::Darknet3D():
-  LifecycleNode("darknet3d_node"), clock_(RCL_SYSTEM_TIME),
+Darknet3D::Darknet3D()
+: LifecycleNode("darknet3d_node"), clock_(RCL_SYSTEM_TIME),
   tfBuffer_(std::make_shared<rclcpp::Clock>(clock_)), tfListener_(tfBuffer_, true),
   pc_received_(false)
 {
@@ -74,15 +74,15 @@ Darknet3D::Darknet3D():
   pointCloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(pointcloud_topic_, 1,
     std::bind(&Darknet3D::pointCloudCb, this, std::placeholders::_1));
 
-  darknet_ros_sub_ = this->create_subscription<darknet_ros_msgs::msg::BoundingBoxes>
-    (input_bbx_topic_, 1, std::bind(&Darknet3D::darknetCb,
-      this, std::placeholders::_1));
+  darknet_ros_sub_ = this->create_subscription<darknet_ros_msgs::msg::BoundingBoxes>(
+    input_bbx_topic_, 1, std::bind(&Darknet3D::darknetCb,
+    this, std::placeholders::_1));
 
-  darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>
-    (output_bbx3d_topic_, 100);
+  darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>(
+    output_bbx3d_topic_, 100);
 
-  markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>
-    ("/darknet_ros_3d/markers", 1);
+  markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+    "/darknet_ros_3d/markers", 1);
 
   last_detection_ts_ = clock_.now();
 
@@ -106,15 +106,15 @@ Darknet3D::darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg)
 void
 Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
   sensor_msgs::msg::PointCloud cloud_pc,
-  gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
+  gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes)
 {
   boxes->header.stamp = cloud_pc2.header.stamp;
   boxes->header.frame_id = cloud_pc2.header.frame_id;
 
-  for (auto bbx : original_bboxes_){
+  for (auto bbx : original_bboxes_) {
     if ((bbx.probability < minimum_probability_) ||
       (std::find(interested_classes_.begin(), interested_classes_.end(),
-        bbx.class_id) == interested_classes_.end())){
+        bbx.class_id) == interested_classes_.end())) {
       continue;
     }
 
@@ -134,8 +134,8 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
     maxx = maxy = maxz =  -std::numeric_limits<float>::max();
     minx = miny = minz =  std::numeric_limits<float>::max();
 
-    for (int i = bbx.xmin; i < bbx.xmax; i++){
-      for (int j = bbx.ymin; j < bbx.ymax; j++){
+    for (int i = bbx.xmin; i < bbx.xmax; i++) {
+      for (int j = bbx.ymin; j < bbx.ymax; j++) {
         pc_index = (j* cloud_pc2.width) + i;
         geometry_msgs::msg::Point32 point =  cloud_pc.points[pc_index];
 
@@ -175,7 +175,7 @@ Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d box
   visualization_msgs::msg::MarkerArray msg;
 
   int counter_id = 0;
-  for (auto bb : boxes.bounding_boxes){
+  for (auto bb : boxes.bounding_boxes) {
     visualization_msgs::msg::Marker bbx_marker;
 
     bbx_marker.header.frame_id = working_frame_;
@@ -212,10 +212,10 @@ Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d box
 void
 Darknet3D::update()
 {
-  if(this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     return;
 
-  if((clock_.now() - last_detection_ts_).seconds() > 2.0 || ! pc_received_)
+  if ((clock_.now() - last_detection_ts_).seconds() > 2.0 || ! pc_received_)
     return;
 
   sensor_msgs::msg::PointCloud2 local_pointcloud;
@@ -227,7 +227,7 @@ Darknet3D::update()
     transform = tfBuffer_.lookupTransform(working_frame_, point_cloud_.header.frame_id,
       point_cloud_.header.stamp, tf2::durationFromSec(2.0));
 
-  }catch(tf2::TransformException& ex){
+  } catch (tf2::TransformException& ex) {
     RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n",
       ex.what(), "quitting callback");
     return;
