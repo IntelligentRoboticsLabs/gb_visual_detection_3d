@@ -34,8 +34,8 @@
 
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
-#ifndef DARKNET_ROS_3D_DARKNET3D_H
-#define DARKNET_ROS_3D_DARKNET3D_H
+#ifndef DARKNET_ROS_3D__DARKNET3D_H_
+#define DARKNET_ROS_3D__DARKNET3D_H_
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>

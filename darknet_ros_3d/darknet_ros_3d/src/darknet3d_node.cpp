@@ -49,6 +49,7 @@ main(int argc, char ** argv)
   while (rclcpp::ok()) {
     rclcpp::spin_some(node->get_node_base_interface());
     // update
+    
     node->update();
     loop_rate.sleep();
   }

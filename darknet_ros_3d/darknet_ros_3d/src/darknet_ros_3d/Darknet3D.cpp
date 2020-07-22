@@ -34,7 +34,7 @@
 
 /* Author: Fernando González fergonzaramos@yahoo.es  */
 
-#include <rclcpp/rclcpp.hpp>
+#include "darknet_ros_3d/Darknet3D.h"
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/point32.hpp>
@@ -44,10 +44,9 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <algorithm>
-
-#include "darknet_ros_3d/Darknet3D.h"
+#include <memory>
+#include <limits>
 #include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
-
 
 using std::placeholders::_1;
 using CallbackReturnT =
@@ -61,6 +60,7 @@ Darknet3D::Darknet3D()
   pc_received_(false)
 {
   // init params
+
   this->declare_parameter("darknet_ros_topic", "/darknet_ros/bounding_boxes");
   this->declare_parameter("output_bbx3d_topic", "/darknet_ros_3d/bounding_boxes");
   this->declare_parameter("point_cloud_topic", "/camera/depth_registered/points");
@@ -91,7 +91,7 @@ Darknet3D::Darknet3D()
 void
 Darknet3D::pointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  point_cloud_ = * msg;
+  point_cloud_ = *msg;
   pc_received_ = true;
 }
 
@@ -105,7 +105,7 @@ Darknet3D::darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg)
 void
 Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
   sensor_msgs::msg::PointCloud cloud_pc,
-  gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes)
+  gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
 {
   boxes->header.stamp = cloud_pc2.header.stamp;
   boxes->header.frame_id = cloud_pc2.header.frame_id;
@@ -123,7 +123,7 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
     center_y = (bbx.ymax + bbx.ymin) / 2;
 
     int pc_index = (center_y * cloud_pc2.width) + center_x;
-    geometry_msgs::msg::Point32 center_point =  cloud_pc.points[pc_index];
+    geometry_msgs::msg::Point32 center_point = cloud_pc.points[pc_index];
 
     if (std::isnan(center_point.x))
       continue;
@@ -136,7 +136,7 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
     for (int i = bbx.xmin; i < bbx.xmax; i++) {
       for (int j = bbx.ymin; j < bbx.ymax; j++) {
         pc_index = (j * cloud_pc2.width) + i;
-        geometry_msgs::msg::Point32 point =  cloud_pc.points[pc_index];
+        geometry_msgs::msg::Point32 point = cloud_pc.points[pc_index];
 
         if (std::isnan(point.x))
           continue;
@@ -234,7 +234,7 @@ Darknet3D::update()
   tf2::doTransform<sensor_msgs::msg::PointCloud2>(point_cloud_, local_pointcloud, transform);
   sensor_msgs::convertPointCloud2ToPointCloud(local_pointcloud, cloud_pc);
 
-  calculate_boxes(local_pointcloud, cloud_pc, & msg);
+  calculate_boxes(local_pointcloud, cloud_pc, &msg);
   publish_markers(msg);
 
   if (darknet3d_pub_->is_activated())
