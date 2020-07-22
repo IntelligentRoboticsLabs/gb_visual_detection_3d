@@ -76,8 +76,8 @@ private:
   void pointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
   void darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg);
   void calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
-                      sensor_msgs::msg::PointCloud cloud_pc,
-                      gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes);
+    sensor_msgs::msg::PointCloud cloud_pc,
+    gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes);
 
   void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);
 
@@ -85,10 +85,10 @@ private:
   rclcpp::Subscription<darknet_ros_msgs::msg::BoundingBoxes>::SharedPtr darknet_ros_sub_;
 
   rclcpp_lifecycle::LifecyclePublisher
-    <gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>::SharedPtr darknet3d_pub_;
+  <gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>::SharedPtr darknet3d_pub_;
 
   rclcpp_lifecycle::LifecyclePublisher
-    <visualization_msgs::msg::MarkerArray>::SharedPtr markers_pub_;
+  <visualization_msgs::msg::MarkerArray>::SharedPtr markers_pub_;
 
   rclcpp::Clock clock_;
   tf2_ros::Buffer tfBuffer_;
