@@ -46,6 +46,7 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <string>
+#include <vector>
 
 #include "darknet_ros_msgs/msg/bounding_boxes.hpp"
 #include "darknet_ros_msgs/msg/bounding_box.hpp"
@@ -75,8 +76,8 @@ private:
   void init_params();
   void pointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
   void darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg);
-  void calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
-    sensor_msgs::msg::PointCloud cloud_pc,
+  void calculate_boxes(
+    sensor_msgs::msg::PointCloud2 cloud_pc2, sensor_msgs::msg::PointCloud cloud_pc,
     gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes);
 
   void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);

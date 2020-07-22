@@ -38,17 +38,17 @@
 #include "darknet_ros_3d/Darknet3D.h"
 
 int
-main(int argc, char **argv)
+main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
   auto node = std::make_shared<darknet_ros_3d::Darknet3D>();
 
-  rclcpp::Rate loop_rate(10); //10Hz
+  rclcpp::Rate loop_rate(10); // 10Hz
 
-  while(rclcpp::ok()){
+  while (rclcpp::ok()) {
     rclcpp::spin_some(node->get_node_base_interface());
-    //update
+    // update
     node->update();
     loop_rate.sleep();
   }

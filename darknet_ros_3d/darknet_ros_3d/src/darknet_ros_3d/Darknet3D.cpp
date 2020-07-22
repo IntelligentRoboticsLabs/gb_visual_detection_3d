@@ -71,12 +71,11 @@ Darknet3D::Darknet3D()
 
   this->configure();
 
-  pointCloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(pointcloud_topic_, 1,
-    std::bind(&Darknet3D::pointCloudCb, this, std::placeholders::_1));
+  pointCloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+    pointcloud_topic_, 1, std::bind(&Darknet3D::pointCloudCb, this, std::placeholders::_1));
 
   darknet_ros_sub_ = this->create_subscription<darknet_ros_msgs::msg::BoundingBoxes>(
-    input_bbx_topic_, 1, std::bind(&Darknet3D::darknetCb,
-    this, std::placeholders::_1));
+    input_bbx_topic_, 1, std::bind(&Darknet3D::darknetCb, this, std::placeholders::_1));
 
   darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>(
     output_bbx3d_topic_, 100);
@@ -205,7 +204,7 @@ Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d box
     msg.markers.push_back(bbx_marker);
   }
 
-  if(markers_pub_->is_activated())
+  if (markers_pub_->is_activated())
     markers_pub_->publish(msg);
 }
 
@@ -223,11 +222,11 @@ Darknet3D::update()
   sensor_msgs::msg::PointCloud cloud_pc;
   gb_visual_detection_3d_msgs::msg::BoundingBoxes3d msg;
 
-  try{
+  try {
     transform = tfBuffer_.lookupTransform(working_frame_, point_cloud_.header.frame_id,
       point_cloud_.header.stamp, tf2::durationFromSec(2.0));
 
-  } catch (tf2::TransformException& ex) {
+  } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n",
       ex.what(), "quitting callback");
     return;
@@ -235,10 +234,10 @@ Darknet3D::update()
   tf2::doTransform<sensor_msgs::msg::PointCloud2>(point_cloud_, local_pointcloud, transform);
   sensor_msgs::convertPointCloud2ToPointCloud(local_pointcloud, cloud_pc);
 
-  calculate_boxes(local_pointcloud, cloud_pc, &msg);
+  calculate_boxes(local_pointcloud, cloud_pc, & msg);
   publish_markers(msg);
 
-  if(darknet3d_pub_->is_activated())
+  if (darknet3d_pub_->is_activated())
     darknet3d_pub_->publish(msg);
 
 }
