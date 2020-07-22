@@ -92,7 +92,7 @@ Darknet3D::Darknet3D()
 void
 Darknet3D::pointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
-  point_cloud_ = *msg;
+  point_cloud_ = * msg;
   pc_received_ = true;
 }
 
@@ -123,7 +123,7 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
     center_x = (bbx.xmax + bbx.xmin) / 2;
     center_y = (bbx.ymax + bbx.ymin) / 2;
 
-    int pc_index = (center_y* cloud_pc2.width) + center_x;
+    int pc_index = (center_y * cloud_pc2.width) + center_x;
     geometry_msgs::msg::Point32 center_point =  cloud_pc.points[pc_index];
 
     if (std::isnan(center_point.x))
@@ -131,12 +131,12 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
 
     float maxx, minx, maxy, miny, maxz, minz;
 
-    maxx = maxy = maxz =  -std::numeric_limits<float>::max();
-    minx = miny = minz =  std::numeric_limits<float>::max();
+    maxx = maxy = maxz = -std::numeric_limits<float>::max();
+    minx = miny = minz = std::numeric_limits<float>::max();
 
     for (int i = bbx.xmin; i < bbx.xmax; i++) {
       for (int j = bbx.ymin; j < bbx.ymax; j++) {
-        pc_index = (j* cloud_pc2.width) + i;
+        pc_index = (j * cloud_pc2.width) + i;
         geometry_msgs::msg::Point32 point =  cloud_pc.points[pc_index];
 
         if (std::isnan(point.x))
