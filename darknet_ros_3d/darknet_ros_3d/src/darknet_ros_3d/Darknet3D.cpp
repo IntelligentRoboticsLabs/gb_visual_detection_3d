@@ -43,10 +43,10 @@
 #include <sensor_msgs/point_cloud_conversion.hpp>
 #include <sensor_msgs/msg/point_field.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
 #include <algorithm>
 #include <memory>
 #include <limits>
+#include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
 
 using std::placeholders::_1;
 using CallbackReturnT =
@@ -106,7 +106,7 @@ void
 Darknet3D::calculate_boxes(
   sensor_msgs::msg::PointCloud2 cloud_pc2,
   sensor_msgs::msg::PointCloud cloud_pc,
-  gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
+  gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes)
 {
   boxes->header.stamp = cloud_pc2.header.stamp;
   boxes->header.frame_id = cloud_pc2.header.frame_id;
@@ -232,7 +232,7 @@ Darknet3D::update()
 
   try {
     transform = tfBuffer_.lookupTransform(working_frame_, point_cloud_.header.frame_id,
-      point_cloud_.header.stamp, tf2::durationFromSec(2.0));
+        point_cloud_.header.stamp, tf2::durationFromSec(2.0));
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(this->get_logger(), "Transform error of sensor data: %s, %s\n",
       ex.what(), "quitting callback");
@@ -323,4 +323,4 @@ Darknet3D::on_error(const rclcpp_lifecycle::State & state)
 }
 }
 
-// end namespace darknet_ros_3d
+// namespace darknet_ros_3d
