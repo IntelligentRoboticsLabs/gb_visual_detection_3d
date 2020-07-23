@@ -103,7 +103,8 @@ Darknet3D::darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg)
 }
 
 void
-Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
+Darknet3D::calculate_boxes(
+  sensor_msgs::msg::PointCloud2 cloud_pc2,
   sensor_msgs::msg::PointCloud cloud_pc,
   gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
 {
@@ -113,7 +114,8 @@ Darknet3D::calculate_boxes(sensor_msgs::msg::PointCloud2 cloud_pc2,
   for (auto bbx : original_bboxes_) {
     if ((bbx.probability < minimum_probability_) ||
       (std::find(interested_classes_.begin(), interested_classes_.end(),
-        bbx.class_id) == interested_classes_.end())) {
+      bbx.class_id) == interested_classes_.end()))
+    {
       continue;
     }
 
