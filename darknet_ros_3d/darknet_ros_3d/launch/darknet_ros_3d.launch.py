@@ -15,14 +15,19 @@
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import SetEnvironmentVariable
 
 params_file = '/config/darknet_3d.yaml'
+
 
 def generate_launch_description():
 
     # Load params
     pkg_dir = get_package_share_directory('darknet_ros_3d')
     config_file_path = pkg_dir + params_file
+
+    stdout_linebuf_envvar = SetEnvironmentVariable(
+        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
 
     # Create Node:
     darknet3d_node = Node(
@@ -34,6 +39,7 @@ def generate_launch_description():
     )
 
     ld = LaunchDescription()
+    ld.add_action(stdout_linebuf_envvar)
     ld.add_action(darknet3d_node)
 
     return ld

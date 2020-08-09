@@ -14,8 +14,8 @@
 
 /* Author: Fernando González fergonzaramos@yahoo.es */
 
-#ifndef DARKNET_ROS_3D__DARKNET3D_H_
-#define DARKNET_ROS_3D__DARKNET3D_H_
+#ifndef DARKNET_ROS_3D__DARKNET3D_HPP_
+#define DARKNET_ROS_3D__DARKNET3D_HPP_
 
 #include <tf2/convert.h>
 #include <tf2_ros/buffer.h>
@@ -86,6 +86,10 @@ private:
   bool pc_received_;
 };
 
-} // namespace darknet_ros_3d
+}
 
-#endif // DARKNET_ROS_3D__DARKNET3D_H_
+// namespace darknet_ros_3d
+
+#endif
+
+// DARKNET_ROS_3D__DARKNET3D_HPP_
