@@ -14,9 +14,9 @@
 
 /* Author: Fernando González fergonzaramos@yahoo.es */
 
+#include "darknet_ros_3d/Darknet3D.hpp"
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
-#include "darknet_ros_3d/Darknet3D.hpp"
 
 int
 main(int argc, char ** argv)
