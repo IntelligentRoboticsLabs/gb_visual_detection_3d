@@ -302,4 +302,4 @@ Darknet3D::on_error(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
-} // namespace darknet_ros_3d
+}  // namespace darknet_ros_3d

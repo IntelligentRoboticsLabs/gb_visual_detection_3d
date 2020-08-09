@@ -86,6 +86,6 @@ private:
   bool pc_received_;
 };
 
-} // namespace darknet_ros_3d
+}  // namespace darknet_ros_3d
 
 #endif  // DARKNET_ROS_3D__DARKNET3D_HPP_
