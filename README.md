@@ -6,7 +6,7 @@
 
 * **Maintainer status:** maintained
 * **Maintainer:** Fernando González Ramos <fergonzaramos@yahoo.es>
-* **Author:** Fernando González Ramos <fergonzaramos@yahoo.es>
+* **Author:** Francisco Martín Rico <fmrico@gmail.com>; Fernando González Ramos <fergonzaramos@yahoo.es>
 * **License:** BSD
 * **Source:** [Github](https://github.com/IntelligentRoboticsLabs/gb_visual_detection_3d)
 
@@ -65,9 +65,9 @@ Now, you can run *darknet_ros_3d* typing ``ros2 launch darknet_ros_3d darknet_ro
 
 * **minimum_probability:** Minimum object probability (provided by *darknet_ros*) to be considered.
 
-* **darknet_ros_topic:** topic where darknet_ros publicates it's bounding boxes. ``/darknet_ros/bounding_boxes``
+* **darknet_ros_topic:** topic where darknet_ros publicates it's bounding boxes. ``/darknet_ros/bounding_boxes``.
 
-* **point_cloud_topic:** topic where point cloud is published from camera. By default: ``/camera/pointcloud``.
+* **point_cloud_topic:** topic where point cloud is published from camera. By default: ``/camera/pointcloud``. **It is important that point cloud topic be of PointCloud2 type and it be depth_registered**.
 
 * **working_frame:** frame that all measurements are based on. By default, *camera_link*. **It is very important that if you want to change this frame, it has the same axes than camera_link**, if you would want 3d coordinates in another axis, you must change it later (once 3d bounding box has been calculated).
 
