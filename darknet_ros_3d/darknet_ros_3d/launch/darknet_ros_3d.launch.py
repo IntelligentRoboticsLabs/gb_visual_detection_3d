@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from ament_index_python.packages import get_package_share_directory
+from launch.actions import SetEnvironmentVariable
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import SetEnvironmentVariable
 
 params_file = '/config/darknet_3d.yaml'
 
