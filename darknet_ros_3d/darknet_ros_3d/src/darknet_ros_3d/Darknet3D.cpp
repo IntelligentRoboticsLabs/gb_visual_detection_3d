@@ -14,7 +14,7 @@
 
 /* Author: Fernando González fergonzaramos@yahoo.es */
 
-#include "darknet_ros_3d/Darknet3D.h"
+#include "darknet_ros_3d/Darknet3D.hpp"
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -301,6 +301,4 @@ Darknet3D::on_error(const rclcpp_lifecycle::State & state)
     this->get_name(), state.label().c_str());
   return CallbackReturnT::SUCCESS;
 }
-}
-
-// namespace darknet_ros_3d
+} // namespace darknet_ros_3d
