@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* Author: Francisco Martín fmrico@gmail.com */
 /* Author: Fernando González fergonzaramos@yahoo.es */
 
 #ifndef DARKNET_ROS_3D__DARKNET3D_HPP_
