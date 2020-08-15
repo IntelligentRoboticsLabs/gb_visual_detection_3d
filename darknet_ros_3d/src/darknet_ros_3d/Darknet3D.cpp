@@ -55,7 +55,7 @@ Darknet3D::Darknet3D():
 {
   initParams();
 
-  darknet3d_pub_ = nh_.advertise<gb_detection_3d_msgs::BoundingBoxes3d>(output_bbx3d_topic_, 100);
+  darknet3d_pub_ = nh_.advertise<gb_visual_detection_3d_msgs::BoundingBoxes3d>(output_bbx3d_topic_, 100);
   markers_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/darknet_ros_3d/markers", 100);
 
   yolo_sub_ = nh_.subscribe(input_bbx_topic_, 1, &Darknet3D::darknetCb, this);
@@ -99,7 +99,7 @@ Darknet3D::darknetCb(const darknet_ros_msgs::BoundingBoxes::ConstPtr& msg)
 void
 Darknet3D::calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
     const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
-    gb_detection_3d_msgs::BoundingBoxes3d* boxes)
+    gb_visual_detection_3d_msgs::BoundingBoxes3d* boxes)
 {
   boxes->header.stamp = cloud_pc2.header.stamp;
   boxes->header.frame_id = working_frame_;
@@ -148,7 +148,7 @@ Darknet3D::calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
         minz = std::min(point.z, minz);
       }
 
-    gb_detection_3d_msgs::BoundingBox3d bbx_msg;
+    gb_visual_detection_3d_msgs::BoundingBox3d bbx_msg;
     bbx_msg.Class = bbx.Class;
     bbx_msg.probability = bbx.probability;
     bbx_msg.xmin = minx;
@@ -187,7 +187,7 @@ Darknet3D::update()
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::fromROSMsg(local_pointcloud, *pcrgb);
 
-  gb_detection_3d_msgs::BoundingBoxes3d msg;
+  gb_visual_detection_3d_msgs::BoundingBoxes3d msg;
 
   calculate_boxes(local_pointcloud, pcrgb, &msg);
 
@@ -197,7 +197,7 @@ Darknet3D::update()
 }
 
 void
-Darknet3D::publish_markers(const gb_detection_3d_msgs::BoundingBoxes3d& boxes)
+Darknet3D::publish_markers(const gb_visual_detection_3d_msgs::BoundingBoxes3d& boxes)
 {
   visualization_msgs::MarkerArray msg;
 
