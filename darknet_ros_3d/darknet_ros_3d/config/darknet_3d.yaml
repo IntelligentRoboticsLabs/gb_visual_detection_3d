@@ -1,7 +1,0 @@
-darknet_ros_topic: /darknet_ros/bounding_boxes
-output_bbx3d_topic: /darknet_ros_3d/bounding_boxes
-point_cloud_topic: /camera/depth_registered/points
-working_frame: camera_link
-mininum_detection_thereshold: 0.3
-minimum_probability: 0.3
-interested_classes: ["person", "italian_biscotti", "smoothie", "mango_juice", "crisps", "water", "sandwich", "toastie", "veggie_pot", "wrap", "espresso", "cappuccino", "americano"]
