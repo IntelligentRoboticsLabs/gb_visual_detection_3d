@@ -34,7 +34,7 @@ The first we have to know is that *darknet_ros_3d* package have dependencies as 
 * rclcpp
 * rclcpp_lifecycle
 * darknet_ros_msgs
-* gb_visual_detection_3d_msgs
+* [gb_visual_detection_3d_msgs](https://github.com/IntelligentRoboticsLabs/gb_visual_detection_3d_msgs)
 * sensor_msgs
 * tf2
 * tf2_ros
