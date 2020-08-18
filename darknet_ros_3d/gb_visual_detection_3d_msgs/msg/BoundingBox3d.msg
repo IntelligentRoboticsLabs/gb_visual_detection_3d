@@ -1,4 +1,4 @@
-string Class
+string object_name
 float64 probability
 float64 xmin
 float64 ymin
