@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Config camera image topic  -->
-  <arg name="camera_rgb_topic" default="/camera/rgb/image_raw" />
+  <arg name="camera_rgb_topic" default="/camera/color/image_raw" />
 
   <!-- Console launch prefix -->
   <arg name="launch_prefix" default=""/>

@@ -40,7 +40,7 @@
 
 #include <ros/ros.h>
 
-#include <gb_detection_3d_msgs/BoundingBoxes3d.h>
+#include <gb_visual_detection_3d_msgs/BoundingBoxes3d.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -64,11 +64,11 @@ private:
   void initParams();
   void pointCloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg);
   void darknetCb(const darknet_ros_msgs::BoundingBoxes::ConstPtr& msg);
-  void publish_markers(const gb_detection_3d_msgs::BoundingBoxes3d& boxes);
+  void publish_markers(const gb_visual_detection_3d_msgs::BoundingBoxes3d& boxes);
 
   void calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
       const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
-      gb_detection_3d_msgs::BoundingBoxes3d* boxes);
+      gb_visual_detection_3d_msgs::BoundingBoxes3d* boxes);
 
   ros::NodeHandle nh_;
   ros::Subscriber yolo_sub_, pointCloud_sub_;

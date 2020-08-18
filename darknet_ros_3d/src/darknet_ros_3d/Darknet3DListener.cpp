@@ -124,7 +124,7 @@ Darknet3DListener::is_valid_object(const DetectedObject& object)
 }
 
 void
-Darknet3DListener::objectsCallback(const gb_detection_3d_msgs::BoundingBoxes3d::ConstPtr& msg)
+Darknet3DListener::objectsCallback(const gb_visual_detection_3d_msgs::BoundingBoxes3d::ConstPtr& msg)
 {
   if (!active_)
     return;
