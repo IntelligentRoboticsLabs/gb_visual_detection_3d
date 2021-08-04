@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(darknet_ros_3d)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 add_compile_options(-std=c++11)
