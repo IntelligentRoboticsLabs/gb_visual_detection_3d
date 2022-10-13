@@ -25,7 +25,8 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/msg/point_cloud.hpp>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <string>
 #include <vector>
@@ -53,14 +54,17 @@ private:
   CallbackReturnT on_shutdown(const rclcpp_lifecycle::State & state);
   CallbackReturnT on_error(const rclcpp_lifecycle::State & state);
 
-  void init_params();
   void pointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
   void darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg);
   void calculate_boxes(
-    sensor_msgs::msg::PointCloud2 cloud_pc2, sensor_msgs::msg::PointCloud cloud_pc,
+    sensor_msgs::msg::PointCloud2 cloud_pc2, pcl::PointCloud<pcl::PointXYZ> cloud,
     gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes);
-
   void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);
+  
+  std::vector<pcl::PointXYZ> calculate_view_points(
+        pcl::PointCloud<pcl::PointXYZ> cloud);
+
+
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloud_sub_;
   rclcpp::Subscription<darknet_ros_msgs::msg::BoundingBoxes>::SharedPtr darknet_ros_sub_;
@@ -70,6 +74,13 @@ private:
 
   rclcpp_lifecycle::LifecyclePublisher
   <visualization_msgs::msg::MarkerArray>::SharedPtr markers_pub_;
+
+  rclcpp_lifecycle::LifecyclePublisher
+  <visualization_msgs::msg::MarkerArray>::SharedPtr view_pub_;
+
+  rclcpp_lifecycle::LifecyclePublisher
+  <sensor_msgs::msg::PointCloud2>::SharedPtr view_points_pub_;
+
 
   rclcpp::Clock clock_;
   tf2_ros::Buffer tfBuffer_;
