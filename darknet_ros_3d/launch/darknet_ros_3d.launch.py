@@ -32,8 +32,8 @@ def generate_launch_description():
     # Create Node:
     darknet3d_node = Node(
         package='darknet_ros_3d',
-        node_executable='darknet3d_node',
-        node_name='darknet3d_node',
+        executable='darknet3d_node',
+        name='darknet3d_node',
         output='screen',
         parameters=[config_file_path]
     )

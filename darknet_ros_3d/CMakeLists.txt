@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(darknet_ros_3d)
+add_definitions(-w)
 
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
