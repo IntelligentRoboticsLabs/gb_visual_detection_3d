@@ -25,6 +25,9 @@ find_package(lifecycle_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(darknet_ros_msgs REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(pcl_msgs REQUIRED)
+find_package(PCL REQUIRED)
 find_package(gb_visual_detection_3d_msgs)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -40,6 +43,9 @@ set(dependencies
   sensor_msgs
   darknet_ros_msgs
   gb_visual_detection_3d_msgs
+  pcl_conversions
+  pcl_msgs
+  PCL
   tf2
   tf2_ros
   tf2_sensor_msgs
@@ -51,6 +57,10 @@ include_directories(
   ${Eigen3_INCLUDE_DIRS}
 )
 
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 add_library(${PROJECT_NAME} SHARED
   src/darknet_ros_3d/Darknet3D.cpp
 )
@@ -58,7 +68,7 @@ ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 
 add_executable(darknet3d_node src/darknet3d_node.cpp)
 ament_target_dependencies(darknet3d_node ${dependencies})
-target_link_libraries(darknet3d_node ${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(darknet3d_node ${PROJECT_NAME} ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 target_include_directories(darknet3d_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
