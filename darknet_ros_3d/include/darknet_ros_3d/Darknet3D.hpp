@@ -61,7 +61,7 @@ private:
     gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes);
   void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);
   
-  std::vector<pcl::PointXYZ> calculate_view_points(
+  pcl::PointCloud<pcl::PointXYZ> calculate_view_points(
         pcl::PointCloud<pcl::PointXYZ> cloud);
 
 
@@ -80,6 +80,9 @@ private:
 
   rclcpp_lifecycle::LifecyclePublisher
   <sensor_msgs::msg::PointCloud2>::SharedPtr view_points_pub_;
+
+  rclcpp_lifecycle::LifecyclePublisher
+  <sensor_msgs::msg::PointCloud2>::SharedPtr human_points_pub_;
 
 
   rclcpp::Clock clock_;

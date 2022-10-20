@@ -18,6 +18,8 @@
 #include "darknet_ros_3d/Darknet3D.hpp"
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2/buffer_core.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/point.hpp>
@@ -75,6 +77,9 @@ namespace darknet_ros_3d
         view_points_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
             "/darknet_ros_3d/view_points", 1);
 
+        human_points_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+            "/darknet_ros_3d/human_points", 1);
+
         last_detection_ts_ = clock_.now();
 
         this->activate();
@@ -94,7 +99,7 @@ namespace darknet_ros_3d
         last_detection_ts_ = clock_.now();
     }
 
-    std::vector<pcl::PointXYZ>
+    pcl::PointCloud<pcl::PointXYZ>
     Darknet3D::calculate_view_points(
         pcl::PointCloud<pcl::PointXYZ> cloud)
     {
@@ -144,7 +149,7 @@ namespace darknet_ros_3d
         }
 
         // return the vector containing the points in the view
-        return points_in_view;
+        return *new_cloud;
     }
 
     void
@@ -156,7 +161,11 @@ namespace darknet_ros_3d
         boxes->header.stamp = cloud_pc2.header.stamp;
         boxes->header.frame_id = cloud_pc2.header.frame_id;
 
-        std::vector<pcl::PointXYZ> points_in_view = calculate_view_points(cloud);
+        pcl::PointCloud<pcl::PointXYZ> points_in_view = calculate_view_points(cloud);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::copyPointCloud(points_in_view, *new_cloud);
+        pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+        pcl::ExtractIndices<pcl::PointXYZ> extract;
 
         double line_constant_h = 1.78571;
         double line_constant_v = 3.1746;
@@ -181,52 +190,65 @@ namespace darknet_ros_3d
 
             // RCLCPP_INFO(this->get_logger(), "Start point loop");
 
-            std::vector<pcl::PointXYZ> points_on_human;
-            for (pcl::PointXYZ p : points_in_view) {
-                // RCLCPP_INFO(this->get_logger(), "X: %s", std::to_string(p.x).c_str());
-                // RCLCPP_INFO(this->get_logger(), "Y: %s", std::to_string(p.y).c_str());
-                // RCLCPP_INFO(this->get_logger(), "Z: %s", std::to_string(p.z).c_str());
-                if (std::isnan(p.x))
-                {
-                    continue;
-                }
+            for (std::size_t i = 0; i < new_cloud->size(); i++) {
+                float xx = new_cloud->points[i].x;
+                float yy = new_cloud->points[i].y;
+                float zz = new_cloud->points[i].z;
                 
                 if (bbx.xmin == 0 || bbx.xmax == 0) {
                     RCLCPP_INFO(this->get_logger(), "xmin or xmax had value of 0, skipping");
                     continue;
                 }
-                // double camera_ratio_left = 1920/bbx.xmin;
-                // double camera_ratio_right = 1920/bbx.xmax;
+
                 // the width of the horizontal camera view in XYZ space
-                double lidar_width = (p.x/line_constant_h)*2;
+                double lidar_width = (xx/line_constant_h)*2;
                 // the scaling factor to convert XYZ to pixels
                 double scale = camera_width/lidar_width;
                 // distance in meters lidar point is from left edge of view
-                double point_pixel_edge_h = (p.x/line_constant_h) - p.y;
+                double point_pixel_edge_h = (xx/line_constant_h) - yy;
                 // The horizontal pixel approximation of the lidar point
                 double lidar_pixel_loc_h = point_pixel_edge_h * scale;
 
-                double lidar_height = (p.x/line_constant_v)*2;
+                double lidar_height = (xx/line_constant_v)*2;
                 double scale2 = camera_height/lidar_height;
                 // distance from bottom view of camera
-                double point_pixel_edge_v = lidar_height - ((p.x/line_constant_v) - p.z);
+                double point_pixel_edge_v = lidar_height - ((xx/line_constant_v) - zz);
                 double lidar_pixel_loc_v = point_pixel_edge_v * scale2;
                 // RCLCPP_INFO(this->get_logger(), "Lidar loc %f Edge %f Scale %f Xmax %ld Xmin %ld",
                 //     lidar_pixel_loc, point_pixel_edge, scale, bbx.xmax, bbx.xmin);
                 // if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && 
                 //     lidar_pixel_loc_v >= bbx.ymin && lidar_pixel_loc_v <= bbx.ymax) {
-                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax) {
+                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && zz > -1.5) {
                     // We know the point is on the human
                     //RCLCPP_INFO(this->get_logger(), "Detected point on person");
 
-                    points_on_human.push_back(p);
-                    maxx = std::max(p.x, maxx);
-                    maxy = std::max(p.y, maxy);
-                    maxz = std::max(p.z, maxz);
-                    minx = std::min(p.x, minx);
-                    miny = std::min(p.y, miny);
-                    minz = std::min(p.z, minz);
+                    maxx = std::max(xx, maxx);
+                    maxy = std::max(yy, maxy);
+                    maxz = std::max(zz, maxz);
+                    minx = std::min(xx, minx);
+                    miny = std::min(yy, miny);
+                    minz = std::min(zz, minz);
+                } else {
+                    inliers->indices.push_back(i);
                 }
+            }
+
+            // filter the cloud to only include the points in the camera view
+            extract.setInputCloud(new_cloud);
+            extract.setIndices(inliers);
+            extract.setNegative(true);
+            extract.filter(*new_cloud);
+
+            // convert all the points in view to a raw sensor messages point cloud
+            pcl::PCLPointCloud2 pcl_pc2;
+            pcl::toPCLPointCloud2(*new_cloud, pcl_pc2);
+            sensor_msgs::msg::PointCloud2 raw_pointcloud;
+            pcl_conversions::fromPCL(pcl_pc2, raw_pointcloud);
+
+            // publish the point cloud to the ros topic
+            if (human_points_pub_->is_activated())
+            {
+                human_points_pub_->publish(raw_pointcloud);
             }
 
             //RCLCPP_INFO(this->get_logger(), "Finished point loop");
@@ -236,8 +258,7 @@ namespace darknet_ros_3d
             bbx_msg.probability = bbx.probability;
 
             bbx_msg.xmin = minx;
-            // bbx_msg.xmax = maxx;
-            bbx_msg.xmax = minx + 1;
+            bbx_msg.xmax = maxx;
             bbx_msg.ymin = miny;
             bbx_msg.ymax = maxy;
             bbx_msg.zmin = minz;
@@ -361,15 +382,18 @@ namespace darknet_ros_3d
         }
 
         sensor_msgs::msg::PointCloud2 local_pointcloud;
-        geometry_msgs::msg::TransformStamped transform;
+        geometry_msgs::msg::TransformStamped camera_transform;
+        geometry_msgs::msg::TransformStamped base_transform;
         gb_visual_detection_3d_msgs::msg::BoundingBoxes3d msg;
 
         try
         {
             // remove the '/' from the point cloud frame id
             std::string frame_id = point_cloud_.header.frame_id.substr(1, -1);
-            transform = tfBuffer_.lookupTransform(working_frame_, frame_id,
+            camera_transform = tfBuffer_.lookupTransform(working_frame_, frame_id,
                                                   point_cloud_.header.stamp, tf2::durationFromSec(2.0));
+            base_transform = tfBuffer_.lookupTransform("base_link", working_frame_, 
+                                                point_cloud_.header.stamp, tf2::durationFromSec(2.0));
         }
         catch (tf2::TransformException &ex)
         {
@@ -377,7 +401,7 @@ namespace darknet_ros_3d
                          ex.what(), "quitting callback");
             return;
         }
-        tf2::doTransform<sensor_msgs::msg::PointCloud2>(point_cloud_, local_pointcloud, transform);
+        tf2::doTransform<sensor_msgs::msg::PointCloud2>(point_cloud_, local_pointcloud, camera_transform);
 
         pcl::PCLPointCloud2 pcl_pc2;
         pcl_conversions::toPCL(local_pointcloud, pcl_pc2);
@@ -391,7 +415,15 @@ namespace darknet_ros_3d
         //     RCLCPP_INFO(this->get_logger(), "Width: %s", std::to_string(cloud->width).c_str());
         //     return;
         // }
-
+        
+        // tf2::Stamped<tf2::Transform> stamped_transform;
+        // tf2::fromMsg(base_transform, stamped_transform);
+        // tf2::Vector3 vector = stamped_transform.getOrigin();
+        // double x = vector.getX();
+        // double y = vector.getY();
+        // double z = vector.getZ();
+        // RCLCPP_INFO(this->get_logger(), "Transform base X %d Y %d Z %d", x, y, z);
+        // return;
         calculate_boxes(local_pointcloud, *cloud, &msg);
         publish_markers(msg);
 
@@ -428,6 +460,7 @@ namespace darknet_ros_3d
         markers_pub_->on_activate();
         view_pub_->on_activate();
         view_points_pub_->on_activate();
+        human_points_pub_->on_activate();
 
         return CallbackReturnT::SUCCESS;
     }
@@ -442,6 +475,7 @@ namespace darknet_ros_3d
         markers_pub_->on_deactivate();
         view_pub_->on_deactivate();
         view_points_pub_->on_deactivate();
+        human_points_pub_->on_deactivate();
 
         return CallbackReturnT::SUCCESS;
     }
@@ -456,6 +490,7 @@ namespace darknet_ros_3d
         markers_pub_.reset();
         view_pub_.reset();
         view_points_pub_.reset();
+        human_points_pub_.reset();
 
         return CallbackReturnT::SUCCESS;
     }
@@ -470,6 +505,7 @@ namespace darknet_ros_3d
         markers_pub_.reset();
         view_pub_.reset();
         view_points_pub_.reset();
+        human_points_pub_.reset();
 
         return CallbackReturnT::SUCCESS;
     }
