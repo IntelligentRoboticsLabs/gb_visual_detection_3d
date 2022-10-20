@@ -58,7 +58,8 @@ private:
   void darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg);
   void calculate_boxes(
     sensor_msgs::msg::PointCloud2 cloud_pc2, pcl::PointCloud<pcl::PointXYZ> cloud,
-    gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes);
+    gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes,
+    float ground_z);
   void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);
   
   pcl::PointCloud<pcl::PointXYZ> calculate_view_points(

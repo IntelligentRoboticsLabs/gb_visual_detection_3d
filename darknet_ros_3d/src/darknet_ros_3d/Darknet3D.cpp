@@ -156,24 +156,29 @@ namespace darknet_ros_3d
     Darknet3D::calculate_boxes(
         sensor_msgs::msg::PointCloud2 cloud_pc2,
         pcl::PointCloud<pcl::PointXYZ> cloud,
-        gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes)
+        gb_visual_detection_3d_msgs::msg::BoundingBoxes3d *boxes,
+        float ground_z)
     {
         boxes->header.stamp = cloud_pc2.header.stamp;
         boxes->header.frame_id = cloud_pc2.header.frame_id;
-
-        pcl::PointCloud<pcl::PointXYZ> points_in_view = calculate_view_points(cloud);
-        pcl::PointCloud<pcl::PointXYZ>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::copyPointCloud(points_in_view, *new_cloud);
-        pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-        pcl::ExtractIndices<pcl::PointXYZ> extract;
 
         double line_constant_h = 1.78571;
         double line_constant_v = 3.1746;
         double camera_width = 1920;
         double camera_height = 1080;
+        double ground_tolerance = 0.1;
+
+        std::vector<pcl::PointCloud<pcl::PointXYZ>> point_cloud_list;
         // Loop through the bounding boxes
         for (auto bbx : original_bboxes_)
         {
+            // setup point indices to extract only the points on the human
+            pcl::PointCloud<pcl::PointXYZ> points_in_view = calculate_view_points(cloud);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::copyPointCloud(points_in_view, *new_cloud);
+            pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+            pcl::ExtractIndices<pcl::PointXYZ> extract;
+
             if (bbx.probability < minimum_probability_ || bbx.class_id == "dont_show")
             {
                 // RCLCPP_INFO(this->get_logger(), "Skipped bounding box");
@@ -218,9 +223,8 @@ namespace darknet_ros_3d
                 //     lidar_pixel_loc, point_pixel_edge, scale, bbx.xmax, bbx.xmin);
                 // if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && 
                 //     lidar_pixel_loc_v >= bbx.ymin && lidar_pixel_loc_v <= bbx.ymax) {
-                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && zz > -1.5) {
+                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && zz > -ground_z + ground_tolerance) {
                     // We know the point is on the human
-                    //RCLCPP_INFO(this->get_logger(), "Detected point on person");
 
                     maxx = std::max(xx, maxx);
                     maxy = std::max(yy, maxy);
@@ -231,24 +235,6 @@ namespace darknet_ros_3d
                 } else {
                     inliers->indices.push_back(i);
                 }
-            }
-
-            // filter the cloud to only include the points in the camera view
-            extract.setInputCloud(new_cloud);
-            extract.setIndices(inliers);
-            extract.setNegative(true);
-            extract.filter(*new_cloud);
-
-            // convert all the points in view to a raw sensor messages point cloud
-            pcl::PCLPointCloud2 pcl_pc2;
-            pcl::toPCLPointCloud2(*new_cloud, pcl_pc2);
-            sensor_msgs::msg::PointCloud2 raw_pointcloud;
-            pcl_conversions::fromPCL(pcl_pc2, raw_pointcloud);
-
-            // publish the point cloud to the ros topic
-            if (human_points_pub_->is_activated())
-            {
-                human_points_pub_->publish(raw_pointcloud);
             }
 
             //RCLCPP_INFO(this->get_logger(), "Finished point loop");
@@ -266,8 +252,33 @@ namespace darknet_ros_3d
 
             boxes->bounding_boxes.push_back(bbx_msg);
 
-            // RCLCPP_INFO(this->get_logger(), "Calculate bbox finished ended");
-            
+            // filter the cloud to only include the points on the person
+            extract.setInputCloud(new_cloud);
+            extract.setIndices(inliers);
+            extract.setNegative(true);
+            extract.filter(*new_cloud);
+            point_cloud_list.push_back(*new_cloud);
+        }
+
+        // For every bounding box, add the points inside it to a overal point cloud
+        pcl::PointCloud<pcl::PointXYZ> result_cloud;
+        if (point_cloud_list.size() != 0) {
+            result_cloud = point_cloud_list[0];
+            for (int i = 1; i < point_cloud_list.size(); i++) {
+                result_cloud += point_cloud_list[i];
+            }
+        }
+
+        // convert all the points in view to a raw sensor messages point cloud
+        pcl::PCLPointCloud2 pcl_pc2;
+        pcl::toPCLPointCloud2(result_cloud, pcl_pc2);
+        sensor_msgs::msg::PointCloud2 raw_pointcloud;
+        pcl_conversions::fromPCL(pcl_pc2, raw_pointcloud);
+
+        // publish the point cloud to the ros topic
+        if (human_points_pub_->is_activated())
+        {
+            human_points_pub_->publish(raw_pointcloud);
         }
     }
 
@@ -407,14 +418,6 @@ namespace darknet_ros_3d
         pcl_conversions::toPCL(local_pointcloud, pcl_pc2);
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
-
-        // int point_cloud_size = cloud->size();
-        // if (point_cloud_size < 100000000) {
-        //     RCLCPP_INFO(this->get_logger(), "Skipping Point cloud size of %s", std::to_string(point_cloud_size).c_str());
-        //     RCLCPP_INFO(this->get_logger(), "Height: %s", std::to_string(cloud->height).c_str());
-        //     RCLCPP_INFO(this->get_logger(), "Width: %s", std::to_string(cloud->width).c_str());
-        //     return;
-        // }
         
         // tf2::Stamped<tf2::Transform> stamped_transform;
         // tf2::fromMsg(base_transform, stamped_transform);
@@ -423,8 +426,9 @@ namespace darknet_ros_3d
         // double y = vector.getY();
         // double z = vector.getZ();
         // RCLCPP_INFO(this->get_logger(), "Transform base X %d Y %d Z %d", x, y, z);
-        // return;
-        calculate_boxes(local_pointcloud, *cloud, &msg);
+        float ground_z = base_transform.transform.translation.z;
+
+        calculate_boxes(local_pointcloud, *cloud, &msg, ground_z);
         publish_markers(msg);
 
         if (darknet3d_pub_->is_activated())
