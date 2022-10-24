@@ -219,11 +219,13 @@ namespace darknet_ros_3d
                 // distance from bottom view of camera
                 double point_pixel_edge_v = lidar_height - ((xx/line_constant_v) - zz);
                 double lidar_pixel_loc_v = point_pixel_edge_v * scale2;
-                // RCLCPP_INFO(this->get_logger(), "Lidar loc %f Edge %f Scale %f Xmax %ld Xmin %ld",
-                //     lidar_pixel_loc, point_pixel_edge, scale, bbx.xmax, bbx.xmin);
-                // if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && 
-                //     lidar_pixel_loc_v >= bbx.ymin && lidar_pixel_loc_v <= bbx.ymax) {
-                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && zz > -ground_z + ground_tolerance) {
+                // RCLCPP_INFO(this->get_logger(), "Lidar loc %f Edge %f Scale %f Ymax %ld Ymin %ld",
+                //     lidar_pixel_loc_v, point_pixel_edge_v, scale2, bbx.ymax, bbx.ymin);
+
+                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && 
+                    lidar_pixel_loc_v >= (camera_height - bbx.ymax) && lidar_pixel_loc_v <= (camera_height - bbx.ymin) && 
+                    zz > -ground_z + ground_tolerance) {
+                // if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && zz > -ground_z + ground_tolerance) {
                     // We know the point is on the human
 
                     maxx = std::max(xx, maxx);
@@ -249,6 +251,15 @@ namespace darknet_ros_3d
             bbx_msg.ymax = maxy;
             bbx_msg.zmin = minz;
             bbx_msg.zmax = maxz;
+
+            // Add checks if boxes aren't square
+            float distx = maxx - minx;
+            float disty = maxy - miny;
+            if (distx > disty) {
+                bbx_msg.xmax = minx + disty;
+            } else if (disty > distx) {
+                bbx_msg.ymax = miny + distx;
+            }
 
             boxes->bounding_boxes.push_back(bbx_msg);
 
