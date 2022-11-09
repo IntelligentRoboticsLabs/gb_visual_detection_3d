@@ -5,7 +5,7 @@
 ## darknet_ros_3d
 
 * **Maintainer status:** maintained
-* **Maintainer:** Fernando González Ramos <fergonzaramos@yahoo.es>
+* **Maintainer:** Nathan Millwater <millwater8919@gmail.com>
 * **Author:** Francisco Martín Rico <fmrico@gmail.com>; Fernando González Ramos <fergonzaramos@yahoo.es>
 * **License:** BSD
 * **Source:** [Github](https://github.com/IntelligentRoboticsLabs/gb_visual_detection_3d)
@@ -42,6 +42,13 @@ The first we have to know is that *darknet_ros_3d* package have dependencies as 
 * visualization_msgs
 * eigen3_cmake_module
 * Eigen3
+* pcl_conversions
+* pcl_msgs
+* PCL
+* tf2_geometry_msgs
+* cv_bridge
+* image_geometry
+* OpenCV
 
 **You can install Darknet Ros following** [this steps](https://github.com/leggedrobotics/darknet_ros). **NOTE:** ros2 branch
 
@@ -53,23 +60,41 @@ You must to clone *gb_visual_detection_3d* into *src* folder located in your wor
 
 ### How It Works
 
-First of all, is necessary to run camera driver. **Make sure that camera driver is publishing point cloud information**.
+First of all, is necessary to have a camera topic publishing images and camera info.
 
 Later, you must run *darknet_ros* and, if everything worked properly, you should see 2d bounding boxes in your screen. If not, you have a problem with *darknet_ros* package.
 
-Now, you can run *darknet_ros_3d* typing ``ros2 launch darknet_ros_3d darknet_ros_3d.launch.py``. If you want to change default parameters like topics it subscribe, you can change it in the configuration file located at ``~/catkin_ws/src/gb_visual_detection_3d/darknet_ros_3d/darknet_ros_3d/config/``. Default parameters are the following:
+Now, you can run *darknet_ros_3d* typing ``ros2 launch darknet_ros_3d darknet_ros_3d.launch.py``. If you want to change default parameters like topics it subscribe, you can change it in the configuration file located at ``~/ws/src/gb_visual_detection_3d/darknet_ros_3d/config/``. Default parameters are the following:
 
-* **interested_classes:** Classes you want to detect. It must be classes names than exists previously in darknet ros.
+* **output_bbx3d_topic:** The name of the topic which the 3d bounding boxes msgs are published to.
+
+* **output_marker_topic:** The name of the topic which the 3d markers are published to.
+
+* **output_view_points_topic:** The name of the topic which the point cloud containing points in the camera view are published to.
+
+* **output_human_points_topic:** The name of the topic which the point cloud containing RGB points on the detected humans are published to.
+
+* **camera_info_topic:** topic where camera metadata is published from camera.
+
+* **camera_image_topic:** topic where camera image annotated by darknet_ros is published.
+
+* **interested_classes:** Classes you want to detect. It must be classes names than exists previously in darknet_ros.
 
 * **mininum_detection_threshold:** Maximum distance range between any pixel of image and the center pixel of the image to be considered.
 
 * **minimum_probability:** Minimum object probability (provided by *darknet_ros*) to be considered.
 
+* **bbxed_tolerance:** Value added to 3D bbx to consider lidar points that slightly fall outside the 3d marker
+
+* **ground_detection_threshold:** Value that specifies how far above the ground to ignore points
+
 * **darknet_ros_topic:** topic where darknet_ros publicates it's bounding boxes. ``/darknet_ros/bounding_boxes``.
 
-* **point_cloud_topic:** topic where point cloud is published from camera. By default: ``/camera/pointcloud``. **It is important that point cloud topic be of PointCloud2 type and it be depth_registered**.
+* **point_cloud_topic:** topic where point cloud is published from sensor. **It is important that point cloud topic be of PointCloud2 type.**.
 
-* **working_frame:** frame that all measurements are based on. By default, *camera_link*. **It is very important that if you want to change this frame, it has the same axes than camera_link**, if you would want 3d coordinates in another axis, you must change it later (once 3d bounding box has been calculated).
+* **working_frame:** frame that all measurements are based on (the tf2 camera frame). By default, *camera_link*. **It is very important that if you want to change this frame, it has the same axes than camera_link**, if you would want 3d coordinates in another axis, you must change it later (once 3d bounding box has been calculated).
+
+* **transform_frame:** frame that represents the ground. Used to understand what Lidar points fall on the ground and can be ignored
 
 ## Nodes
 
