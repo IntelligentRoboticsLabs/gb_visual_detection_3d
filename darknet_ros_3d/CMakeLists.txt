@@ -37,6 +37,9 @@ find_package(tf2_sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3)
+find_package(cv_bridge REQUIRED)
+find_package(image_geometry REQUIRED)
+find_package(OpenCV REQUIRED)
 
 set(dependencies
   rclcpp
@@ -53,6 +56,8 @@ set(dependencies
   tf2_geometry_msgs
   tf2_sensor_msgs
   visualization_msgs
+  cv_bridge
+  image_geometry
 )
 
 include_directories(
@@ -61,6 +66,7 @@ include_directories(
 )
 
 include_directories(${PCL_INCLUDE_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 

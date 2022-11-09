@@ -24,11 +24,19 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/point_field.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/extract_indices.h>
 #include <visualization_msgs/msg/marker.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <boost/foreach.hpp>
 #include <algorithm>
 #include <memory>
 #include <limits>
@@ -36,7 +44,6 @@
 #include <fstream>
 #include "gb_visual_detection_3d_msgs/msg/bounding_box3d.hpp"
 
-using std::placeholders::_1;
 using CallbackReturnT =
     rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -51,11 +58,17 @@ namespace darknet_ros_3d
 
         this->declare_parameter("darknet_ros_topic", "/darknet_ros/bounding_boxes");
         this->declare_parameter("output_bbx3d_topic", "/darknet_ros_3d/bounding_boxes");
+        this->declare_parameter("output_markers_topic", "/darknet_ros_3d/markers");
+        this->declare_parameter("output_view_points_topic", "/darknet_ros_3d/view_points");
+        this->declare_parameter("output_human_points_topic", "/darknet_ros_3d/human_points");
         this->declare_parameter("point_cloud_topic", "/velodyne_points");
+        this->declare_parameter("camera_info_topic", "/camera/camera_info");
+        this->declare_parameter("camera_image_topic", "/darknet_ros/detection_image");
+        this->declare_parameter("bbx3d_tolerance", 0.4f);
         this->declare_parameter("working_frame", "camera_link");
-        this->declare_parameter("maximum_detection_threshold", 0.3f);
+        this->declare_parameter("transform_frame", "base_link");
+        this->declare_parameter("ground_detection_threshold", 0.3f);
         this->declare_parameter("minimum_probability", 0.3f);
-        // this->declare_parameter("interested_classes", "/darknet_ros/check_for_objects");
 
         this->configure();
 
@@ -65,20 +78,23 @@ namespace darknet_ros_3d
         darknet_ros_sub_ = this->create_subscription<darknet_ros_msgs::msg::BoundingBoxes>(
             input_bbx_topic_, 1, std::bind(&Darknet3D::darknetCb, this, std::placeholders::_1));
 
+        camera_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
+            camera_info_topic_, 1, std::bind(&Darknet3D::infoCb, this, std::placeholders::_1));
+
+        camera_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+            camera_image_topic_, 1, std::bind(&Darknet3D::cameraCb, this, std::placeholders::_1));
+
         darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>(
             output_bbx3d_topic_, 100);
 
         markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-            "/darknet_ros_3d/markers", 1);
-
-        view_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-            "/darknet_ros_3d/view", 1);
+            output_markers_topic_, 1);
 
         view_points_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-            "/darknet_ros_3d/view_points", 1);
+            output_view_points_topic_, 1);
 
         human_points_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-            "/darknet_ros_3d/human_points", 1);
+            output_human_points_topic_, 1);
 
         last_detection_ts_ = clock_.now();
 
@@ -99,32 +115,58 @@ namespace darknet_ros_3d
         last_detection_ts_ = clock_.now();
     }
 
+    void
+    Darknet3D::infoCb(const sensor_msgs::msg::CameraInfo::SharedPtr msg)
+    {
+        camera_info_ = *msg;
+        last_detection_ts_ = clock_.now();
+    }
+
+    void
+    Darknet3D::cameraCb(const sensor_msgs::msg::Image::SharedPtr msg)
+    {
+        camera_image_ = *msg;
+        last_detection_ts_ = clock_.now();
+    }
+
     pcl::PointCloud<pcl::PointXYZ>
     Darknet3D::calculate_view_points(
-        pcl::PointCloud<pcl::PointXYZ> cloud)
+        pcl::PointCloud<pcl::PointXYZ> cloud,
+        image_geometry::PinholeCameraModel cam_model)
     {
-        // In 3D space use this constant to calculate the field of view lines for 
-        // x = constant * y and x = -constant * y
-        // This line constant is calibrated for the camera
-        double line_constant = 1.78571;
-        // First we check which points are in our field of view
-        std::vector<pcl::PointXYZ> points_in_view;
+        // First we setup a pcl point cloud and do the necessary conversions from a 
+        // raw sensor messages point cloud to a PCL object
         pcl::PointCloud<pcl::PointXYZ>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::copyPointCloud(cloud, *new_cloud);
         pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
         pcl::ExtractIndices<pcl::PointXYZ> extract;
+
+        // loop through all points in the cloud to determine which lie in the camera's view
         for (std::size_t i = 0; i < new_cloud->size(); i++) {
+            // extract x y and z from the list of points
             int xx = new_cloud->points[i].x;
             int yy = new_cloud->points[i].y;
-            if (xx >= 0 && (line_constant * std::abs(yy)) < xx && xx < 20) {
-                // We know the point is in our field of view
-                if (std::isnan(xx))
-                {
-                    continue;
-                }
+            int zz = new_cloud->points[i].z;
 
-                points_in_view.push_back(new_cloud->points[i]);              
+            // Create a 3d point and project it onto the raw image from the camera sensor
+            cv::Point3d point3d;
+            // 3d space axis is different from camera projection 3d space
+            point3d = cv::Point3d(-yy, -zz, xx);
+            // 2d point has x and y that match width and height of camera image
+            cv::Point2d point2d = cam_model.project3dToPixel(point3d);
+
+            // get the width and height of the image from the CameraInfo topic
+            int camera_width = camera_info_.width;
+            int camera_height = camera_info_.height;
+            // Check if the project 3d point onto pixels is within the darknet bounding box
+            // Also check if points are infront of us 
+            if (point2d.x > 0 && point2d.x < camera_width && point2d.y > 0 && point2d.y < camera_height && xx > 0) {
+                // We know the point is in our field of view
+                if (std::isnan(xx)) {
+                    continue;
+                }           
             } else {
+                // Add the points not in the view to be removed
                 inliers->indices.push_back(i);
             }
         }
@@ -148,8 +190,15 @@ namespace darknet_ros_3d
             view_points_pub_->publish(raw_pointcloud);
         }
 
-        // return the vector containing the points in the view
+        // return the new cloud containing the points in the view
         return *new_cloud;
+    }
+
+    visualization_msgs::msg::Marker
+    Darknet3D::augment_image(pcl::PointCloud<pcl::PointXYZ> result_cloud) {
+        visualization_msgs::msg::Marker points;
+
+        return points;
     }
 
     void
@@ -162,72 +211,77 @@ namespace darknet_ros_3d
         boxes->header.stamp = cloud_pc2.header.stamp;
         boxes->header.frame_id = cloud_pc2.header.frame_id;
 
-        double line_constant_h = 1.78571;
-        double line_constant_v = 3.1746;
-        double camera_width = 1920;
-        double camera_height = 1080;
-        double ground_tolerance = 0.1;
+        // Create camera model object and load from the camera info topic
+        image_geometry::PinholeCameraModel cam_model;
+        cam_model.fromCameraInfo(camera_info_);
 
-        std::vector<pcl::PointCloud<pcl::PointXYZ>> point_cloud_list;
+        // List to hold the points clouds that contain all the people in the frame
+        std::vector<pcl::PointCloud<pcl::PointXYZRGB>> point_cloud_list;
+        pcl::PointCloud<pcl::PointXYZ> points_in_view = calculate_view_points(cloud, cam_model);
+
         // Loop through the bounding boxes
         for (auto bbx : original_bboxes_)
         {
+            // Center of darknet bounding box
+            int center_x = (bbx.xmax + bbx.xmin) / 2;
+            int center_y = (bbx.ymax + bbx.ymin) / 2;
+
+            // Project the center of the darknet bounding box to a unit vector in 3d space
+            cv::Point3d center;
+            center = cam_model.projectPixelTo3dRay(cv::Point2d(center_x, center_y));
+
             // setup point indices to extract only the points on the human
-            pcl::PointCloud<pcl::PointXYZ> points_in_view = calculate_view_points(cloud);
-            pcl::PointCloud<pcl::PointXYZ>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
             pcl::copyPointCloud(points_in_view, *new_cloud);
             pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-            pcl::ExtractIndices<pcl::PointXYZ> extract;
+            pcl::ExtractIndices<pcl::PointXYZRGB> extract;
 
+            // Ignore bounding boxes with lower probabilities and all other classes
             if (bbx.probability < minimum_probability_ || bbx.class_id == "dont_show")
             {
                 // RCLCPP_INFO(this->get_logger(), "Skipped bounding box");
                 continue;
             }
 
-            int center_x, center_y;
-            center_x = (bbx.xmax + bbx.xmin) / 2;
-            center_y = (bbx.ymax + bbx.ymin) / 2;
-
+            // Setup maximum values for 3d boudning box
             float maxx, minx, maxy, miny, maxz, minz;
             maxx = maxy = maxz = -std::numeric_limits<float>::max();
             minx = miny = minz = std::numeric_limits<float>::max();
 
             // RCLCPP_INFO(this->get_logger(), "Start point loop");
 
+            // Loop through all points in the point cloud
             for (std::size_t i = 0; i < new_cloud->size(); i++) {
+                // Extract the xyz values from the point
                 float xx = new_cloud->points[i].x;
                 float yy = new_cloud->points[i].y;
                 float zz = new_cloud->points[i].z;
                 
+                // Skip check
                 if (bbx.xmin == 0 || bbx.xmax == 0) {
                     RCLCPP_INFO(this->get_logger(), "xmin or xmax had value of 0, skipping");
                     continue;
                 }
+                // Save time by ignore lidar points on the ground
+                if (zz < -ground_z + ground_detection_threshold_) {
+                    // Remove the point not on the human 
+                    inliers->indices.push_back(i);
+                    continue;
+                }
 
-                // the width of the horizontal camera view in XYZ space
-                double lidar_width = (xx/line_constant_h)*2;
-                // the scaling factor to convert XYZ to pixels
-                double scale = camera_width/lidar_width;
-                // distance in meters lidar point is from left edge of view
-                double point_pixel_edge_h = (xx/line_constant_h) - yy;
-                // The horizontal pixel approximation of the lidar point
-                double lidar_pixel_loc_h = point_pixel_edge_h * scale;
+                // Project 3d lidar point to 2d pixel point on the image
+                cv::Point3d point3d;
+                point3d = cv::Point3d(-yy, -zz, xx);
+                cv::Point2d point2d = cam_model.project3dToPixel(point3d);
 
-                double lidar_height = (xx/line_constant_v)*2;
-                double scale2 = camera_height/lidar_height;
-                // distance from bottom view of camera
-                double point_pixel_edge_v = lidar_height - ((xx/line_constant_v) - zz);
-                double lidar_pixel_loc_v = point_pixel_edge_v * scale2;
-                // RCLCPP_INFO(this->get_logger(), "Lidar loc %f Edge %f Scale %f Ymax %ld Ymin %ld",
-                //     lidar_pixel_loc_v, point_pixel_edge_v, scale2, bbx.ymax, bbx.ymin);
+                // RCLCPP_INFO(this->get_logger(), "Pixel X %s Pixel Y %s",
+                //     std::to_string(point2d.x).c_str(), std::to_string(point2d.y).c_str());
 
-                if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && 
-                    lidar_pixel_loc_v >= (camera_height - bbx.ymax) && lidar_pixel_loc_v <= (camera_height - bbx.ymin) && 
-                    zz > -ground_z + ground_tolerance) {
-                // if (lidar_pixel_loc_h >= bbx.xmin && lidar_pixel_loc_h <= bbx.xmax && zz > -ground_z + ground_tolerance) {
-                    // We know the point is on the human
+                // Check if the project lidar point is within the darknet bounding box
+                if (point2d.x >= bbx.xmin && point2d.x <= bbx.xmax && 
+                    point2d.y >= bbx.ymin && point2d.y <= bbx.ymax) {
 
+                    // Save the max and min values of all the lidar points
                     maxx = std::max(xx, maxx);
                     maxy = std::max(yy, maxy);
                     maxz = std::max(zz, maxz);
@@ -235,31 +289,27 @@ namespace darknet_ros_3d
                     miny = std::min(yy, miny);
                     minz = std::min(zz, minz);
                 } else {
+                    // Remove the point not on the human 
                     inliers->indices.push_back(i);
                 }
             }
 
             //RCLCPP_INFO(this->get_logger(), "Finished point loop");
 
+            // Create the custom 3d bounding box message
             gb_visual_detection_3d_msgs::msg::BoundingBox3d bbx_msg;
             bbx_msg.object_name = bbx.class_id;
             bbx_msg.probability = bbx.probability;
 
-            bbx_msg.xmin = minx;
-            bbx_msg.xmax = maxx;
-            bbx_msg.ymin = miny;
-            bbx_msg.ymax = maxy;
-            bbx_msg.zmin = minz;
-            bbx_msg.zmax = maxz;
-
-            // Add checks if boxes aren't square
-            float distx = maxx - minx;
-            float disty = maxy - miny;
-            if (distx > disty) {
-                bbx_msg.xmax = minx + disty;
-            } else if (disty > distx) {
-                bbx_msg.ymax = miny + distx;
-            }
+            // Scale the projected 3d unit vector to the location of the person
+            float scale = minx/center.z;
+            // Dynamically set the bounding box 
+            bbx_msg.xmin = center.z * scale - (1 / scale);            
+            bbx_msg.xmax = center.z * scale + (1 / scale);            
+            bbx_msg.ymin = (-center.x) * scale - (1 / scale);           
+            bbx_msg.ymax = (-center.x) * scale + (1 / scale);           
+            bbx_msg.zmin = (-center.y) * scale - (1 - (1 / scale));            
+            bbx_msg.zmax = (-center.y) * scale + (1 - (1 / scale));
 
             boxes->bounding_boxes.push_back(bbx_msg);
 
@@ -268,14 +318,63 @@ namespace darknet_ros_3d
             extract.setIndices(inliers);
             extract.setNegative(true);
             extract.filter(*new_cloud);
+
+            // convert the sensor message image to a opencv image
+            cv_bridge::CvImagePtr cv_image;
+            cv_image = cv_bridge::toCvCopy(camera_image_, camera_image_.encoding);
+
+            // Further reduce the points on the human by only keeping the points
+            // that lie within the new bounding box
+            pcl::PointIndices::Ptr inliers_human(new pcl::PointIndices());
+            pcl::ExtractIndices<pcl::PointXYZRGB> extract_human;
+            for (std::size_t i = 0; i < new_cloud->size(); i++) {
+                // Extract the xyz values from the point
+                float xx = new_cloud->points[i].x;
+                float yy = new_cloud->points[i].y;
+                float zz = new_cloud->points[i].z;
+
+                if (xx >= bbx_msg.xmin-bbx3d_tolerance_ && xx <= bbx_msg.xmax+bbx3d_tolerance_ &&
+                    yy >= bbx_msg.ymin-bbx3d_tolerance_ && yy <= bbx_msg.ymax+bbx3d_tolerance_ &&
+                    zz >= bbx_msg.zmin-bbx3d_tolerance_ && zz <= bbx_msg.zmax+bbx3d_tolerance_ ) {
+
+                    // edit the point in the point cloud to have the rgb pixel 
+                    // value of the image
+                    // Project 3d lidar point to 2d pixel point on the image
+                    cv::Point3d point3d;
+                    point3d = cv::Point3d(-yy, -zz, xx);
+                    cv::Point2d point2d = cam_model.project3dToPixel(point3d);
+
+                    // get the BGR values of the pixel
+                    int b = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[0];
+                    int g = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[1];
+                    int r = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[2];
+                    
+                    new_cloud->points[i].r = r;
+                    new_cloud->points[i].g = g;
+                    new_cloud->points[i].b = b;
+                    
+                } else {
+                    // Remove the point not on the human 
+                    inliers_human->indices.push_back(i);
+                }
+            }
+
+            // filter the cloud to only include the points on the person
+            // Second filter of the point cloud displaying human
+            extract_human.setInputCloud(new_cloud);
+            extract_human.setIndices(inliers_human);
+            extract_human.setNegative(true);
+            extract_human.filter(*new_cloud);
+
             point_cloud_list.push_back(*new_cloud);
         }
 
-        // For every bounding box, add the points inside it to a overal point cloud
-        pcl::PointCloud<pcl::PointXYZ> result_cloud;
+        // For every bounding box, add the points inside it to a overall point cloud
+        pcl::PointCloud<pcl::PointXYZRGB> result_cloud;
         if (point_cloud_list.size() != 0) {
             result_cloud = point_cloud_list[0];
             for (int i = 1; i < point_cloud_list.size(); i++) {
+                // concat the point clouds
                 result_cloud += point_cloud_list[i];
             }
         }
@@ -297,7 +396,6 @@ namespace darknet_ros_3d
     Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes)
     {
         visualization_msgs::msg::MarkerArray msg;
-        visualization_msgs::msg::MarkerArray view;
 
         int counter_id = 0;
         for (auto bb : boxes.bounding_boxes)
@@ -331,62 +429,9 @@ namespace darknet_ros_3d
             msg.markers.push_back(bbx_marker);
         }
 
-        for (int i = 0; i < 4; i++) {
-            visualization_msgs::msg::Marker line;
-            geometry_msgs::msg::Point point1;
-            point1.x = 0;
-            point1.y = 0;
-            point1.z = 0;
-            geometry_msgs::msg::Point point2;
-            point2.x = 50;
-            if (i == 0) {
-                point2.y = 28;
-                point2.z = 0;
-            } else if (i == 1) {
-                point2.y = -28;
-                point2.z = 0;
-            } else if (i == 2) {
-                point2.y = 0;
-                point2.z = 15.75;
-            } else {
-                point2.y = 0;
-                point2.z = -15.75;
-            }
-            
-            std::vector<geometry_msgs::msg::Point> point_list{point1, point2}; 
-
-            line.header.frame_id = working_frame_;
-            line.header.stamp = boxes.header.stamp;
-            line.ns = "darknet3d";
-            line.id = i;
-            line.type = visualization_msgs::msg::Marker::ARROW;
-            line.action = visualization_msgs::msg::Marker::ADD;
-            line.frame_locked = false;
-            line.points = point_list;
-            line.color.b = 229;
-            line.color.g = 204;
-            line.color.r = 255.0;
-            line.color.a = 0.4;
-            line.scale.x = 0.3;
-            line.scale.y = 0.5;
-            line.scale.z = 0;
-            line.lifetime = rclcpp::Duration::from_seconds(1.0); //
-            if (i == 0) {
-                line.text = "Left";
-            } else {
-                line.text = "Right";
-            }
-
-            view.markers.push_back(line);
-        }
-
         if (markers_pub_->is_activated())
         {
             markers_pub_->publish(msg);
-        }
-        if (view_pub_->is_activated())
-        {
-            view_pub_->publish(view);
         }
     }
 
@@ -410,11 +455,11 @@ namespace darknet_ros_3d
 
         try
         {
-            // remove the '/' from the point cloud frame id
-            std::string frame_id = point_cloud_.header.frame_id.substr(1, -1);
+            std::string frame_id = point_cloud_.header.frame_id;
+            // std::string frame_id = point_cloud_.header.frame_id.substr(1, -1);
             camera_transform = tfBuffer_.lookupTransform(working_frame_, frame_id,
                                                   point_cloud_.header.stamp, tf2::durationFromSec(2.0));
-            base_transform = tfBuffer_.lookupTransform("base_link", working_frame_, 
+            base_transform = tfBuffer_.lookupTransform(transform_frame_, working_frame_, 
                                                 point_cloud_.header.stamp, tf2::durationFromSec(2.0));
         }
         catch (tf2::TransformException &ex)
@@ -423,20 +468,16 @@ namespace darknet_ros_3d
                          ex.what(), "quitting callback");
             return;
         }
+        // Transform the point cloud message origin to the camera 
         tf2::doTransform<sensor_msgs::msg::PointCloud2>(point_cloud_, local_pointcloud, camera_transform);
 
+        // Convert the raw point cloud message to a PCL point cloud
         pcl::PCLPointCloud2 pcl_pc2;
-        pcl_conversions::toPCL(local_pointcloud, pcl_pc2);
+        pcl_conversions::toPCL(point_cloud_, pcl_pc2);
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
         
-        // tf2::Stamped<tf2::Transform> stamped_transform;
-        // tf2::fromMsg(base_transform, stamped_transform);
-        // tf2::Vector3 vector = stamped_transform.getOrigin();
-        // double x = vector.getX();
-        // double y = vector.getY();
-        // double z = vector.getZ();
-        // RCLCPP_INFO(this->get_logger(), "Transform base X %d Y %d Z %d", x, y, z);
+        // Extract the z value from the base tf frame
         float ground_z = base_transform.transform.translation.z;
 
         calculate_boxes(local_pointcloud, *cloud, &msg, ground_z);
@@ -456,9 +497,16 @@ namespace darknet_ros_3d
 
         this->get_parameter("darknet_ros_topic", input_bbx_topic_);
         this->get_parameter("output_bbx3d_topic", output_bbx3d_topic_);
+        this->get_parameter("output_markers_topic", output_markers_topic_);
+        this->get_parameter("output_view_points_topic", output_view_points_topic_);
+        this->get_parameter("output_human_points_topic", output_human_points_topic_);
         this->get_parameter("point_cloud_topic", pointcloud_topic_);
+        this->get_parameter("camera_info_topic", camera_info_topic_);
+        this->get_parameter("camera_image_topic", camera_image_topic_);
+        this->get_parameter("bbx3d_tolerance", bbx3d_tolerance_);
         this->get_parameter("working_frame", working_frame_);
-        this->get_parameter("maximum_detection_threshold", maximum_detection_threshold_);
+        this->get_parameter("transform_frame", transform_frame_);
+        this->get_parameter("ground_detection_threshold", ground_detection_threshold_);
         this->get_parameter("minimum_probability", minimum_probability_);
         this->get_parameter("interested_classes", interested_classes_);
 
@@ -473,7 +521,6 @@ namespace darknet_ros_3d
 
         darknet3d_pub_->on_activate();
         markers_pub_->on_activate();
-        view_pub_->on_activate();
         view_points_pub_->on_activate();
         human_points_pub_->on_activate();
 
@@ -488,7 +535,6 @@ namespace darknet_ros_3d
 
         darknet3d_pub_->on_deactivate();
         markers_pub_->on_deactivate();
-        view_pub_->on_deactivate();
         view_points_pub_->on_deactivate();
         human_points_pub_->on_deactivate();
 
@@ -503,7 +549,6 @@ namespace darknet_ros_3d
 
         darknet3d_pub_.reset();
         markers_pub_.reset();
-        view_pub_.reset();
         view_points_pub_.reset();
         human_points_pub_.reset();
 
@@ -518,7 +563,6 @@ namespace darknet_ros_3d
 
         darknet3d_pub_.reset();
         markers_pub_.reset();
-        view_pub_.reset();
         view_points_pub_.reset();
         human_points_pub_.reset();
 

@@ -2,8 +2,15 @@ darknet3d_node:
   ros__parameters:
     darknet_ros_topic: /darknet_ros/bounding_boxes
     output_bbx3d_topic: /darknet_ros_3d/bounding_boxes
-    point_cloud_topic: /velodyne_points
-    working_frame: camera_link
-    maximum_detection_threshold: 0.2
+    output_markers_topic: /darknet_ros_3d/markers
+    output_view_points_topic: /darknet_ros_3d/view_points
+    output_human_points_topic: /darknet_ros_3d/human_points
+    point_cloud_topic: /rear_velodyne/points
+    camera_info_topic: /rear_camera/color/camera_info
+    camera_image_topic: /darknet_ros/detection_image
+    bbx3d_tolerance: 0.4
+    working_frame: rear_camera_link
+    transform_frame: base_footprint
+    ground_detection_threshold: 0.5
     minimum_probability: 0.4
     interested_classes: ["person"]
