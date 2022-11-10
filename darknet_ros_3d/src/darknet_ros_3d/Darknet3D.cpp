@@ -129,6 +129,10 @@ namespace darknet_ros_3d
         last_detection_ts_ = clock_.now();
     }
 
+    /* 
+    * Calculate the lidar points that lie within the field of view of the camera.
+    * Publish the filtered point cloud to a new topic viewable in Rviz.
+    */
     pcl::PointCloud<pcl::PointXYZ>
     Darknet3D::calculate_view_points(
         pcl::PointCloud<pcl::PointXYZ> cloud,
@@ -194,13 +198,72 @@ namespace darknet_ros_3d
         return *new_cloud;
     }
 
-    visualization_msgs::msg::Marker
-    Darknet3D::augment_image(pcl::PointCloud<pcl::PointXYZ> result_cloud) {
-        visualization_msgs::msg::Marker points;
+    /*
+    * Augment a point cloud's points with RGB color values from the camera image.
+    * Uses a camera model to correlate a point cloud point to a camera pixel.
+    */
+    pcl::PointCloud<pcl::PointXYZRGB>
+    Darknet3D::augment_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud,
+        gb_visual_detection_3d_msgs::msg::BoundingBox3d bbx_msg,
+        image_geometry::PinholeCameraModel cam_model) {
 
-        return points;
+        // convert the sensor message image to a opencv image
+        cv_bridge::CvImagePtr cv_image;
+        cv_image = cv_bridge::toCvCopy(camera_image_, camera_image_.encoding);
+
+        // Further reduce the points on the human by only keeping the points
+        // that lie within the new bounding box
+        pcl::PointIndices::Ptr inliers_human(new pcl::PointIndices());
+        pcl::ExtractIndices<pcl::PointXYZRGB> extract_human;
+        for (std::size_t i = 0; i < new_cloud->size(); i++) {
+            // Extract the xyz values from the point
+            float xx = new_cloud->points[i].x;
+            float yy = new_cloud->points[i].y;
+            float zz = new_cloud->points[i].z;
+
+            // Check if the point lies within the 3d bounding box
+            if (xx >= bbx_msg.xmin-bbx3d_tolerance_ && xx <= bbx_msg.xmax+bbx3d_tolerance_ &&
+                yy >= bbx_msg.ymin-bbx3d_tolerance_ && yy <= bbx_msg.ymax+bbx3d_tolerance_ &&
+                zz >= bbx_msg.zmin-bbx3d_tolerance_ && zz <= bbx_msg.zmax+bbx3d_tolerance_ ) {
+
+                // edit the point in the point cloud to have the rgb pixel 
+                // value of the image
+                // Project 3d lidar point to 2d pixel point on the image
+                cv::Point3d point3d;
+                point3d = cv::Point3d(-yy, -zz, xx);
+                cv::Point2d point2d = cam_model.project3dToPixel(point3d);
+
+                // get the BGR values of the pixel
+                int b = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[0];
+                int g = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[1];
+                int r = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[2];
+                
+                // Assign the color values to the point cloud point
+                new_cloud->points[i].r = r;
+                new_cloud->points[i].g = g;
+                new_cloud->points[i].b = b;
+                
+            } else {
+                // Remove the point not on the human 
+                inliers_human->indices.push_back(i);
+            }
+        }
+
+        // filter the cloud to only include the points on the person
+        // Second filter of the point cloud displaying human
+        extract_human.setInputCloud(new_cloud);
+        extract_human.setIndices(inliers_human);
+        extract_human.setNegative(true);
+        extract_human.filter(*new_cloud);
+
+        return *new_cloud;
     }
 
+    /*
+    * Calculate the 3d bounding boxes that a detected person belongs to
+    * Publishes a messages containing lidar points that lie on the human
+    * and the camera field of view. 
+    */
     void
     Darknet3D::calculate_boxes(
         sensor_msgs::msg::PointCloud2 cloud_pc2,
@@ -294,8 +357,6 @@ namespace darknet_ros_3d
                 }
             }
 
-            //RCLCPP_INFO(this->get_logger(), "Finished point loop");
-
             // Create the custom 3d bounding box message
             gb_visual_detection_3d_msgs::msg::BoundingBox3d bbx_msg;
             bbx_msg.object_name = bbx.class_id;
@@ -319,54 +380,11 @@ namespace darknet_ros_3d
             extract.setNegative(true);
             extract.filter(*new_cloud);
 
-            // convert the sensor message image to a opencv image
-            cv_bridge::CvImagePtr cv_image;
-            cv_image = cv_bridge::toCvCopy(camera_image_, camera_image_.encoding);
+            // Augment the point cloud with RGB color values from the camera.
+            pcl::PointCloud<pcl::PointXYZRGB> human_points;
+            human_points = augment_pointcloud(new_cloud, bbx_msg, cam_model);
 
-            // Further reduce the points on the human by only keeping the points
-            // that lie within the new bounding box
-            pcl::PointIndices::Ptr inliers_human(new pcl::PointIndices());
-            pcl::ExtractIndices<pcl::PointXYZRGB> extract_human;
-            for (std::size_t i = 0; i < new_cloud->size(); i++) {
-                // Extract the xyz values from the point
-                float xx = new_cloud->points[i].x;
-                float yy = new_cloud->points[i].y;
-                float zz = new_cloud->points[i].z;
-
-                if (xx >= bbx_msg.xmin-bbx3d_tolerance_ && xx <= bbx_msg.xmax+bbx3d_tolerance_ &&
-                    yy >= bbx_msg.ymin-bbx3d_tolerance_ && yy <= bbx_msg.ymax+bbx3d_tolerance_ &&
-                    zz >= bbx_msg.zmin-bbx3d_tolerance_ && zz <= bbx_msg.zmax+bbx3d_tolerance_ ) {
-
-                    // edit the point in the point cloud to have the rgb pixel 
-                    // value of the image
-                    // Project 3d lidar point to 2d pixel point on the image
-                    cv::Point3d point3d;
-                    point3d = cv::Point3d(-yy, -zz, xx);
-                    cv::Point2d point2d = cam_model.project3dToPixel(point3d);
-
-                    // get the BGR values of the pixel
-                    int b = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[0];
-                    int g = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[1];
-                    int r = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[2];
-                    
-                    new_cloud->points[i].r = r;
-                    new_cloud->points[i].g = g;
-                    new_cloud->points[i].b = b;
-                    
-                } else {
-                    // Remove the point not on the human 
-                    inliers_human->indices.push_back(i);
-                }
-            }
-
-            // filter the cloud to only include the points on the person
-            // Second filter of the point cloud displaying human
-            extract_human.setInputCloud(new_cloud);
-            extract_human.setIndices(inliers_human);
-            extract_human.setNegative(true);
-            extract_human.filter(*new_cloud);
-
-            point_cloud_list.push_back(*new_cloud);
+            point_cloud_list.push_back(human_points);
         }
 
         // For every bounding box, add the points inside it to a overall point cloud
@@ -392,6 +410,9 @@ namespace darknet_ros_3d
         }
     }
 
+    /*
+    * Publishes the 3d bounding box markers with the appropriate information.
+    */
     void
     Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes)
     {
@@ -435,6 +456,10 @@ namespace darknet_ros_3d
         }
     }
 
+    /*
+    * Update gets called whenever there is a new detection of a ros message
+    * Most of the functionality lies within this function. 
+    */
     void
     Darknet3D::update()
     {

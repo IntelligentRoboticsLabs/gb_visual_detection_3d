@@ -66,8 +66,11 @@ private:
     gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes,
     float ground_z);
   void publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d boxes);
-  visualization_msgs::msg::Marker
-    augment_image(pcl::PointCloud<pcl::PointXYZ> result_cloud);
+  pcl::PointCloud<pcl::PointXYZRGB>
+    augment_pointcloud(
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud,
+    gb_visual_detection_3d_msgs::msg::BoundingBox3d bbx_msg,
+    image_geometry::PinholeCameraModel cam_model);
   
   pcl::PointCloud<pcl::PointXYZ> calculate_view_points(
         pcl::PointCloud<pcl::PointXYZ> cloud,
