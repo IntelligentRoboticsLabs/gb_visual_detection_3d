@@ -234,9 +234,9 @@ namespace darknet_ros_3d
                 cv::Point2d point2d = cam_model.project3dToPixel(point3d);
 
                 // get the BGR values of the pixel
-                int b = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[0];
-                int g = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[1];
-                int r = cv_image->image.at<cv::Vec3b>(point2d.x, point2d.y)[2];
+                int b = cv_image->image.at<cv::Vec3b>(point2d.y, point2d.x)[0];
+                int g = cv_image->image.at<cv::Vec3b>(point2d.y, point2d.x)[1];
+                int r = cv_image->image.at<cv::Vec3b>(point2d.y, point2d.x)[2];
                 
                 // Assign the color values to the point cloud point
                 new_cloud->points[i].r = r;
