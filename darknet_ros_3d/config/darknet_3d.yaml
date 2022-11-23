@@ -8,6 +8,7 @@ darknet3d_node:
     point_cloud_topic: /rear_velodyne/points
     camera_info_topic: /rear_camera/color/camera_info
     camera_image_topic: /darknet_ros/detection_image
+    raw_camera_topic: /rear_camera/color/image_raw
     bbx3d_tolerance: 0.4
     working_frame: rear_camera_link
     transform_frame: base_footprint

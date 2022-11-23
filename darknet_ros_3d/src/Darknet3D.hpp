@@ -61,6 +61,7 @@ private:
   void darknetCb(const darknet_ros_msgs::msg::BoundingBoxes::SharedPtr msg);
   void infoCb(const sensor_msgs::msg::CameraInfo::SharedPtr msg);
   void cameraCb(const sensor_msgs::msg::Image::SharedPtr msg);
+  void rawCb(const sensor_msgs::msg::Image::SharedPtr msg);
   void calculate_boxes(
     sensor_msgs::msg::PointCloud2 cloud_pc2, pcl::PointCloud<pcl::PointXYZ> cloud,
     gb_visual_detection_3d_msgs::msg::BoundingBoxes3d * boxes,
@@ -81,6 +82,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloud_sub_;
   rclcpp::Subscription<darknet_ros_msgs::msg::BoundingBoxes>::SharedPtr darknet_ros_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr camera_image_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr raw_camera_image_sub_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_;
 
   rclcpp_lifecycle::LifecyclePublisher
@@ -103,6 +105,7 @@ private:
   sensor_msgs::msg::PointCloud2 point_cloud_;
   sensor_msgs::msg::CameraInfo camera_info_;
   sensor_msgs::msg::Image camera_image_;
+  sensor_msgs::msg::Image raw_image_;
   rclcpp::Time last_detection_ts_;
   std::string input_bbx_topic_;
   std::string output_bbx3d_topic_;
@@ -112,6 +115,7 @@ private:
   std::string pointcloud_topic_;
   std::string camera_info_topic_;
   std::string camera_image_topic_;
+  std::string raw_camera_topic_;
   std::string working_frame_;
   std::string transform_frame_;
   std::vector<std::string> interested_classes_ = {};

@@ -64,6 +64,7 @@ namespace darknet_ros_3d
         this->declare_parameter("point_cloud_topic", "/velodyne_points");
         this->declare_parameter("camera_info_topic", "/camera/camera_info");
         this->declare_parameter("camera_image_topic", "/darknet_ros/detection_image");
+        this->declare_parameter("raw_camera_topic", "/rear_camera/color/image_raw");
         this->declare_parameter("bbx3d_tolerance", 0.4f);
         this->declare_parameter("working_frame", "camera_link");
         this->declare_parameter("transform_frame", "base_link");
@@ -83,6 +84,9 @@ namespace darknet_ros_3d
 
         camera_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
             camera_image_topic_, 1, std::bind(&Darknet3D::cameraCb, this, std::placeholders::_1));
+
+        raw_camera_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+            raw_camera_topic_, 1, std::bind(&Darknet3D::rawCb, this, std::placeholders::_1));
 
         darknet3d_pub_ = this->create_publisher<gb_visual_detection_3d_msgs::msg::BoundingBoxes3d>(
             output_bbx3d_topic_, 100);
@@ -126,6 +130,13 @@ namespace darknet_ros_3d
     Darknet3D::cameraCb(const sensor_msgs::msg::Image::SharedPtr msg)
     {
         camera_image_ = *msg;
+        last_detection_ts_ = clock_.now();
+    }
+
+    void
+    Darknet3D::rawCb(const sensor_msgs::msg::Image::SharedPtr msg)
+    {
+        raw_image_ = *msg;
         last_detection_ts_ = clock_.now();
     }
 
@@ -209,7 +220,7 @@ namespace darknet_ros_3d
 
         // convert the sensor message image to a opencv image
         cv_bridge::CvImagePtr cv_image;
-        cv_image = cv_bridge::toCvCopy(camera_image_, camera_image_.encoding);
+        cv_image = cv_bridge::toCvCopy(raw_image_, raw_image_.encoding);
 
         // Further reduce the points on the human by only keeping the points
         // that lie within the new bounding box
@@ -528,6 +539,7 @@ namespace darknet_ros_3d
         this->get_parameter("point_cloud_topic", pointcloud_topic_);
         this->get_parameter("camera_info_topic", camera_info_topic_);
         this->get_parameter("camera_image_topic", camera_image_topic_);
+        this->get_parameter("raw_camera_topic", raw_camera_topic_);
         this->get_parameter("bbx3d_tolerance", bbx3d_tolerance_);
         this->get_parameter("working_frame", working_frame_);
         this->get_parameter("transform_frame", transform_frame_);
