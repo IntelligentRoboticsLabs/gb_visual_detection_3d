@@ -26,19 +26,22 @@ def generate_launch_description():
     pkg_dir = get_package_share_directory('darknet_ros_3d')
     config_file_path = pkg_dir + params_file
 
+    stdout_envvar = SetEnvironmentVariable(
+        'RCUTILS_LOGGING_USE_STDOUT', '1')
     stdout_linebuf_envvar = SetEnvironmentVariable(
-        'RCUTILS_CONSOLE_STDOUT_LINE_BUFFERED', '1')
+        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
 
     # Create Node:
     darknet3d_node = Node(
         package='darknet_ros_3d',
-        node_executable='darknet3d_node',
-        node_name='darknet3d_node',
+        executable='darknet3d_node',
+        name='darknet3d_node',
         output='screen',
         parameters=[config_file_path]
     )
 
     ld = LaunchDescription()
+    ld.add_action(stdout_envvar)
     ld.add_action(stdout_linebuf_envvar)
     ld.add_action(darknet3d_node)
 

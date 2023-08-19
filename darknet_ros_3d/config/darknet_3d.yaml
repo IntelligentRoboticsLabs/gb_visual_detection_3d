@@ -2,7 +2,7 @@ darknet3d_node:
   ros__parameters:
     darknet_ros_topic: /darknet_ros/bounding_boxes
     output_bbx3d_topic: /darknet_ros_3d/bounding_boxes
-    point_cloud_topic: /camera/pointcloud
+    point_cloud_topic: /camera/depth/color/points
     working_frame: camera_link
     maximum_detection_threshold: 0.2
     minimum_probability: 0.4

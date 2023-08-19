@@ -17,7 +17,7 @@
 
 #include "darknet_ros_3d/Darknet3D.hpp"
 #include <tf2/transform_datatypes.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/point32.hpp>
@@ -48,7 +48,7 @@ Darknet3D::Darknet3D()
   this->declare_parameter("working_frame", "camera_link");
   this->declare_parameter("maximum_detection_threshold", 0.3f);
   this->declare_parameter("minimum_probability", 0.3f);
-  this->declare_parameter("interested_classes");
+  this->declare_parameter("interested_classes", rclcpp::PARAMETER_STRING_ARRAY);
 
   this->configure();
 
@@ -184,7 +184,7 @@ Darknet3D::publish_markers(gb_visual_detection_3d_msgs::msg::BoundingBoxes3d box
     bbx_marker.color.g = bb.probability * 255.0;
     bbx_marker.color.r = (1.0 - bb.probability) * 255.0;
     bbx_marker.color.a = 0.4;
-    bbx_marker.lifetime = rclcpp::Duration(1.0);
+    bbx_marker.lifetime = rclcpp::Duration(1, 0);
     bbx_marker.text = bb.object_name;
 
     msg.markers.push_back(bbx_marker);
