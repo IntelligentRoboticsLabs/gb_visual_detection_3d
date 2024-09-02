@@ -46,6 +46,8 @@
 
 #include <pcl_ros/point_cloud.h>
 #include <tf/transform_listener.h>
+#include <message_filters/cache.h>
+#include <message_filters/subscriber.h>
 
 #include <vector>
 #include <string>
@@ -58,26 +60,32 @@ class Darknet3D
 public:
   Darknet3D();
 
-  virtual void update();
+  // virtual void update();
 
 private:
   void initParams();
-  void pointCloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg);
+  // void pointCloudCb(const sensor_msgs::PointCloud2::ConstPtr& msg);
   void darknetCb(const darknet_ros_msgs::BoundingBoxes::ConstPtr& msg);
   void publish_markers(const gb_visual_detection_3d_msgs::BoundingBoxes3d& boxes);
 
   void calculate_boxes(const sensor_msgs::PointCloud2& cloud_pc2,
-      const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud_pcl,
+      const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& cloud_pcl,
+      const darknet_ros_msgs::BoundingBoxes::ConstPtr& boxes2d,
       gb_visual_detection_3d_msgs::BoundingBoxes3d* boxes);
+  
+  pcl::PointXYZRGB compute_center_point(const sensor_msgs::PointCloud2& cloud_pc2,
+      const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& cloud_pcl,
+      const darknet_ros_msgs::BoundingBox& box2d);
 
   ros::NodeHandle nh_;
-  ros::Subscriber yolo_sub_, pointCloud_sub_;
+  ros::Subscriber yolo_sub_;
+  // Subscriber to PointCloud2 messages
+  message_filters::Subscriber<sensor_msgs::PointCloud2> pointCloud_sub_;
+  // Cache to store PointCloud2 messages
+  message_filters::Cache<sensor_msgs::PointCloud2> pointcloud_cache_;
+
   ros::Publisher darknet3d_pub_, markers_pub_;
   tf::TransformListener tfListener_;
-
-  std::vector<darknet_ros_msgs::BoundingBox> original_bboxes_;
-  sensor_msgs::PointCloud2 point_cloud_;
-  ros::Time last_detection_ts_;
 
   std::string input_bbx_topic_;
   std::string output_bbx3d_topic_;

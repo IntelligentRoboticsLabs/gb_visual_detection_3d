@@ -43,16 +43,6 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "darknet_3d");
   darknet_ros_3d::Darknet3D darknet3d;
-
-  ros::Rate loop_rate(10);
-
-  while (ros::ok())
-  {
-    darknet3d.update();
-
-    ros::spinOnce();
-    loop_rate.sleep();
-  }
-
+  ros::spin();
   return 0;
 }
